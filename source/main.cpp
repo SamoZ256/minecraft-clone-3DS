@@ -187,17 +187,17 @@ int main(int argc, char **argv) {
             C3D_Mtx projectionMatrix;
             //Mtx_Identity(&projectionMatrix);
     		Mtx_PerspStereoTilt(&projectionMatrix, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
-    		Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0 + distZ, false);
+    		//Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0 + distZ, false);
 
     		// Calculate model view matrix.
     		C3D_Mtx modelView;
     		Mtx_Identity(&modelView);
-    		Mtx_Translate(&modelView, 0.0, 0.0, -2.0 + sinf(angleX), true);
+    		Mtx_Translate(&modelView, 0.0, -1.0, -2.0 + sinf(angleX), true);
     		Mtx_RotateX(&modelView, angleX, true);
     		Mtx_RotateY(&modelView, angleY, true);
 
     		if (interOcularDistance >= 0.0f){
-    			angleX += 0.05f;
+    			//angleX += 0.05f;
     			angleY += 0.05f;
     		}
 
