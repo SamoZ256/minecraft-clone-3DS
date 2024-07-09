@@ -132,10 +132,9 @@ int main(int argc, char **argv) {
 	// Vertex buffer
 	void* vboData = linearAlloc(sizeof(vertices));
 	memcpy(vboData, vertices, sizeof(vertices));
-	C3D_BufInfo* bufferInfo = C3D_GetBufInfo();
-	BufInfo_Init(bufferInfo);
-	// TODO: what is the 0x210?
-	BufInfo_Add(bufferInfo, vboData, sizeof(Vertex), 3, 0x210);
+	C3D_BufInfo* vertexBuffer = C3D_GetBufInfo();
+	BufInfo_Init(vertexBuffer);
+	BufInfo_Add(vertexBuffer, vboData, sizeof(Vertex), 3, 0x210);
 
 	// Environment
 	C3D_TexEnv* environment = C3D_GetTexEnv(0);
@@ -161,7 +160,6 @@ int main(int argc, char **argv) {
 	C3D_LightPosition(&light, &lightVector);
 
 	// TODO: remove
-	float distZ = 0.0f;
 	float angleX = 0.0f;
 	float angleY = 0.0f;
 
@@ -183,13 +181,12 @@ int main(int argc, char **argv) {
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
-            // Compute projection matrix.
+            // Projection matrx
             C3D_Mtx projectionMatrix;
-            //Mtx_Identity(&projectionMatrix);
     		Mtx_PerspStereoTilt(&projectionMatrix, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
     		//Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0 + distZ, false);
 
-    		// Calculate model view matrix.
+    		// Model view matrix
     		C3D_Mtx modelView;
     		Mtx_Identity(&modelView);
     		Mtx_Translate(&modelView, 0.0, -1.0, -2.0 + sinf(angleX), true);
@@ -205,7 +202,8 @@ int main(int argc, char **argv) {
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uProjection, &projectionMatrix);
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uModelView, &modelView);
 
-    		// Draw the vertex buffer objects.
+    		// Draw
+            C3D_SetBufInfo(vertexBuffer);
     		C3D_DrawArrays(GPU_TRIANGLES, 0, sizeof(vertices) / sizeof(Vertex));
         }
         C3D_FrameEnd(0);
