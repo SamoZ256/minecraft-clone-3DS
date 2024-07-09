@@ -2,6 +2,7 @@
 
 #include <3ds.h>
 #include <citro3d.h>
+#include <tex3ds.h>
 
 // Shader includes
 #include "vshader_shbin.h"
@@ -87,6 +88,29 @@ const C3D_Material material = {
 	{ 0.0f, 0.0f, 0.0f }, // Emission
 };
 
+// Function to load a T3X texture from a file
+C3D_Tex* loadT3XTexture(const char* filename) {
+    // Load the T3X file into memory
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        std::cout << "Failed to open file '" << filename << "'" << std::endl;
+        return nullptr;
+    }
+
+    // Parse the T3X file
+    C3D_Tex* texture = (C3D_Tex*)malloc(sizeof(C3D_Tex));
+    Tex3DS_Texture t3x = Tex3DS_TextureImportStdio(file, texture, nullptr, true);
+    if (!t3x) {
+        std::cout << "Failed to create texture '" << filename << "'" << std::endl;
+        return nullptr;
+    }
+
+    // Free the T3X file data
+    Tex3DS_TextureFree(t3x);
+
+    return texture;
+}
+
 int main(int argc, char **argv) {
     // Initialization
     srvInit();
@@ -159,13 +183,15 @@ int main(int argc, char **argv) {
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
 	C3D_LightPosition(&light, &lightVector);
 
+	// Load texture
+	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/output.t3x");
+
 	// TODO: remove
 	float angleX = 0.0f;
 	float angleY = 0.0f;
 
 	// -------- Main loop --------
     while (aptMainLoop()) {
-        std::cout << "Hello world" << std::endl;
         gspWaitForVBlank();
         hidScanInput();
 
