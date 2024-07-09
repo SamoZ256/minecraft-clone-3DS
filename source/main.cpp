@@ -123,6 +123,12 @@ int main(int argc, char **argv) {
     // Init console for debugging
     consoleInit(GFX_BOTTOM, NULL);
 
+    Result res = romfsInit();
+    if (res != 0) {
+        std::cout << "Failed to initialize RomFS (code: 0x" << std::hex << res << ")" << std::endl;
+        return 1;
+    }
+
 	// -------- Graphics initialization --------
 
 	// Top render target
@@ -184,7 +190,8 @@ int main(int argc, char **argv) {
 	C3D_LightPosition(&light, &lightVector);
 
 	// Load texture
-	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/output.t3x");
+	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/texture_atlas.t3x");
+	C3D_TexBind(0, texture);
 
 	// TODO: remove
 	float angleX = 0.0f;
