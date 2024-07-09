@@ -1,4 +1,5 @@
-#include <stdio.h>
+#include <iostream>
+
 #include <3ds.h>
 #include <citro3d.h>
 
@@ -12,10 +13,7 @@ int main(int argc, char **argv) {
     // Init console for debugging
     consoleInit(GFX_BOTTOM, NULL);
 
-	printf("TEST GAME!");
-	printf("Woah!");
-
-	printf("\x1b[20;15HPress Start to exit.");
+	std::cout << "Hello, World!" << std::endl;
 
     while(aptMainLoop()) {
         gspWaitForVBlank();
