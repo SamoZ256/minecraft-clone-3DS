@@ -1,8 +1,4 @@
-#include <iostream>
-
-#include <3ds.h>
-#include <citro3d.h>
-#include <tex3ds.h>
+#include "world.hpp"
 
 // Shader includes
 #include "vshader_shbin.h"
@@ -150,7 +146,7 @@ int main(int argc, char **argv) {
 	// Uniforms
 	C3D_BindProgram(&program);
 	int uProjection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
-	int uModelView = shaderInstanceGetUniformLocation(program.vertexShader, "modelView");
+	int uPosition = shaderInstanceGetUniformLocation(program.vertexShader, "position");
 
 	// Vertex attributes
 	C3D_AttrInfo* attributeInfo = C3D_GetAttrInfo();
@@ -196,12 +192,12 @@ int main(int argc, char **argv) {
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
 	C3D_LightPosition(&light, &lightVector);
 
-	// TODO: remove
-	float angleX = 0.0f;
-	float angleY = 0.0f;
+	// World
+	World world(uPosition);
 
 	// -------- Main loop --------
     while (aptMainLoop()) {
+        // TODO: should this be here?
         gspWaitForVBlank();
         hidScanInput();
 
@@ -220,27 +216,16 @@ int main(int argc, char **argv) {
             // Projection matrx
             C3D_Mtx projectionMatrix;
     		Mtx_PerspStereoTilt(&projectionMatrix, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
-    		//Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0 + distZ, false);
-
-    		// Model view matrix
-    		C3D_Mtx modelView;
-    		Mtx_Identity(&modelView);
-    		Mtx_Translate(&modelView, 0.0, -1.0, -2.0 + sinf(angleX), true);
-    		Mtx_RotateX(&modelView, angleX, true);
-    		Mtx_RotateY(&modelView, angleY, true);
-
-    		if (interOcularDistance >= 0.0f){
-    			//angleX += 0.05f;
-    			angleY += 0.05f;
-    		}
+    		//Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0, false);
 
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uProjection, &projectionMatrix);
-    		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uModelView, &modelView);
 
-    		// Draw
+            // Bind the vertex buffer
             C3D_SetBufInfo(vertexBuffer);
-    		C3D_DrawArrays(GPU_TRIANGLES, 0, sizeof(vertices) / sizeof(Vertex));
+
+            // Draw the world
+            world.render();
         }
         C3D_FrameEnd(0);
 

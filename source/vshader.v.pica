@@ -1,7 +1,7 @@
 ; Example PICA200 vertex shader
 
 ; Uniforms
-.fvec projection[4], modelView[4]
+.fvec projection[4], position
 
 ; Constants
 .constf myconst(0.0, 1.0, -1.0, 0.5)
@@ -26,11 +26,8 @@
 	mov r0.xyz, inpos
 	mov r0.w,   ones
 
-	; r1 = modelView * inpos
-	dp4 r1.x, modelView[0], r0
-	dp4 r1.y, modelView[1], r0
-	dp4 r1.z, modelView[2], r0
-	dp4 r1.w, modelView[3], r0
+	; r1 = position + inpos
+	add r1, position, r0
 
 	; outview = -r1
 	mov outview, -r1
@@ -44,11 +41,8 @@
 	; outtex = intex
 	mov outtc0, intex
 
-	; Transform the normal vector with the modelView matrix
-	; TODO: use a separate normal matrix that is the transpose of the inverse of modelView
-	dp3 r14.x, modelView[0], innrm
-	dp3 r14.y, modelView[1], innrm
-	dp3 r14.z, modelView[2], innrm
+	; Normal
+	mov r14, innrm
 	dp3 r6.x, r14, r14
 	rsq r6.x, r6.x
 	mul r14.xyz, r14.xyz, r6.x
