@@ -84,6 +84,10 @@ const C3D_Material material = {
 	{ 0.0f, 0.0f, 0.0f }, // Emission
 };
 
+C3D_FVec vec3ScalarMultiply(C3D_FVec v, float s) {
+    return C3D_FVec{ .z = v.z * s, .y = v.y * s, .x = v.x * s };
+}
+
 // Function to load a T3X texture from a file
 C3D_Tex* loadT3XTexture(const char* filename) {
     // Load the T3X file into memory
@@ -186,7 +190,7 @@ int main(int argc, char **argv) {
 	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
 
 	// Lighting properties
-	C3D_FVec lightVector = {{ 0.0, 0.0, 1.0, 0.0 }};
+	C3D_FVec lightVector = {{ 0.0, 0.0, -1.0, 0.0 }};
 	C3D_Light light;
 	C3D_LightInit(&light, &lightEnvironment);
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
@@ -197,7 +201,9 @@ int main(int argc, char **argv) {
 
 	// Camera
 	Camera camera;
+	touchPosition lastTouch{0, 0};
 
+	// HACK
 	float t = 0.0f;
 
 	// -------- Main loop --------
@@ -206,8 +212,38 @@ int main(int argc, char **argv) {
         gspWaitForVBlank();
         hidScanInput();
 
-        if (hidKeysDown() & KEY_START)
-            break;
+        C3D_FVec dpad{.y = 0.0f, .x = 0.0f};
+        if (hidKeysHeld() & KEY_UP)
+            dpad.y += 1.0f;
+        if (hidKeysHeld() & KEY_DOWN)
+            dpad.y -= 1.0f;
+        // TODO: find out why left and right is swapped
+        if (hidKeysHeld() & KEY_LEFT)
+            dpad.x += 1.0f;
+        if (hidKeysHeld() & KEY_RIGHT)
+            dpad.x -= 1.0f;
+
+        if (dpad.x != 0.0f || dpad.y != 0.0f)
+            dpad = FVec3_Normalize(dpad);
+
+        // Move
+        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.05f);
+                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.05f));
+        //movement.y = 0.0f;
+        camera.position = FVec3_Add(camera.position, movement);
+
+        // Rotate
+        touchPosition touch;
+        hidTouchRead(&touch);
+        // If held, but not pressed just this frame
+        if ((hidKeysHeld() & KEY_TOUCH) && !(hidKeysDown() & KEY_TOUCH)) {
+            float rotX = (touch.py - lastTouch.py) * 0.01f;
+            float rotY = (touch.px - lastTouch.px) * 0.01f;
+
+            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX * 0.5f, false);
+            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY * 0.5f, false);
+        }
+        lastTouch = touch;
 
         float slider = osGet3DSliderState();
     	float interOcularDistance = slider / 3.0f;
@@ -218,14 +254,14 @@ int main(int argc, char **argv) {
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
-            //camera.position.z = std::sin(t);
-            camera.position.y = std::cos(t);
-            //camera.direction.y = sinf(t);
+            //camera.position.y = std::sin(t);
+            //camera.position.y = std::cos(t);
+            //camera.direction.x = sinf(t);
             //camera.direction.z = cosf(t);
 
             // Projection matrx
             C3D_Mtx projection;
-    		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
+    		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, true);
 
             // View matrix
             C3D_Mtx view;
