@@ -25,16 +25,16 @@ public:
 
     void render();
 
-    Block getBlock(u8 xblockX, u8 xblockY, u8 xblockZ) const {
+    BlockType getBlock(u8 xblockX, u8 xblockY, u8 xblockZ) const {
         return blocks[xblockX][xblockY][xblockZ];
     }
 
-    void setBlock(u8 xblockX, u8 xblockY, u8 xblockZ, Block block) {
+    void setBlock(u8 xblockX, u8 xblockY, u8 xblockZ, BlockType block) {
         blocks[xblockX][xblockY][xblockZ] = block;
     }
 
 private:
-    Block blocks[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
+    BlockType blocks[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
     s32 x, z;
     int uPosition;
 

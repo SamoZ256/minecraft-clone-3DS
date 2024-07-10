@@ -1,9 +1,17 @@
 #pragma once
 
+struct PackedVec2 {
+    float y, x;
+};
+
+struct PackedVec3 {
+    float z, y, x;
+};
+
 struct Vertex {
-	float position[3];
-	float texcoord[2];
-	float normal[3];
+	PackedVec3 position;
+	PackedVec2 texCoord;
+	PackedVec3 normal;
 };
 
 const Vertex cubeVertices[6][6] = {
