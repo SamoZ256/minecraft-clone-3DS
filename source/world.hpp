@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "chunk.hpp"
+#include "camera.hpp"
 
 const s16 RENDER_DISTANCE = 1;
 

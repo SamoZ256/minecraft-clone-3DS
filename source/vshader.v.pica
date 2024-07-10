@@ -1,7 +1,7 @@
 ; Example PICA200 vertex shader
 
 ; Uniforms
-.fvec projection[4], position
+.fvec viewProj[4], position
 
 ; Constants
 .constf myconst(0.0, 1.0, -1.0, 0.5)
@@ -32,11 +32,11 @@
 	; outview = -r1
 	mov outview, -r1
 
-	; outpos = projection * r1
-	dp4 outpos.x, projection[0], r1
-	dp4 outpos.y, projection[1], r1
-	dp4 outpos.z, projection[2], r1
-	dp4 outpos.w, projection[3], r1
+	; outpos = viewProj * r1
+	dp4 outpos.x, viewProj[0], r1
+	dp4 outpos.y, viewProj[1], r1
+	dp4 outpos.z, viewProj[2], r1
+	dp4 outpos.w, viewProj[3], r1
 
 	; outtex = intex
 	mov outtc0, intex

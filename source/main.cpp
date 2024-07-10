@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
 	// Uniforms
 	C3D_BindProgram(&program);
-	int uProjection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
+	int uViewProj = shaderInstanceGetUniformLocation(program.vertexShader, "viewProj");
 	int uPosition = shaderInstanceGetUniformLocation(program.vertexShader, "position");
 
 	// Vertex attributes
@@ -195,6 +195,11 @@ int main(int argc, char **argv) {
 	// World
 	World world(uPosition);
 
+	// Camera
+	Camera camera;
+
+	float t = 0.0f;
+
 	// -------- Main loop --------
     while (aptMainLoop()) {
         // TODO: should this be here?
@@ -213,13 +218,24 @@ int main(int argc, char **argv) {
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
+            //camera.position.z = std::sin(t);
+            camera.position.y = std::cos(t);
+            //camera.direction.y = sinf(t);
+            //camera.direction.z = cosf(t);
+
             // Projection matrx
-            C3D_Mtx projectionMatrix;
-    		Mtx_PerspStereoTilt(&projectionMatrix, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
-    		//Mtx_Translate(&projectionMatrix, 0.0, 0.0, -10.0, false);
+            C3D_Mtx projection;
+    		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, false);
+
+            // View matrix
+            C3D_Mtx view;
+    		Mtx_LookAt(&view, camera.position, FVec3_Add(camera.position, camera.direction), camera.up, true);
+
+            C3D_Mtx viewProj;
+            Mtx_Multiply(&viewProj, &projection, &view);
 
     		// Update uniforms
-    		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uProjection, &projectionMatrix);
+    		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);
 
             // Bind the vertex buffer
             C3D_SetBufInfo(vertexBuffer);
@@ -228,6 +244,8 @@ int main(int argc, char **argv) {
             world.render();
         }
         C3D_FrameEnd(0);
+
+        t += 0.05f;
 
         // Present
         //gfxFlushBuffers();
