@@ -30,6 +30,13 @@ enum class BlockType {
     Stone,
 };
 
+struct Block {
+    BlockType ty = BlockType::None;
+
+    Block() = default;
+    Block(BlockType ty_) : ty(ty_) {}
+};
+
 // PZ, NZ, PX, NX, PY, NY
 constexpr TextureType blockTextures[][6] = {
     {TextureType::None, TextureType::None, TextureType::None, TextureType::None, TextureType::None, TextureType::None},

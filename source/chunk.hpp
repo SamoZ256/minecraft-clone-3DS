@@ -18,25 +18,37 @@ struct VboData {
     }
 };
 
+class World;
+
 class Chunk {
 public:
-    Chunk(s32 x_, s32 z_, int uPosition_);
+    Chunk(World& world_, int uPosition_, s32 x_, s32 z_);
     ~Chunk() = default;
 
     void render();
 
-    BlockType getBlock(u8 xblockX, u8 xblockY, u8 xblockZ) const {
-        return blocks[xblockX][xblockY][xblockZ];
+    Block getBlock(u8 blockX, u8 blockY, u8 blockZ) const {
+        return blocks[blockX][blockY][blockZ];
     }
 
-    void setBlock(u8 xblockX, u8 xblockY, u8 xblockZ, BlockType block) {
-        blocks[xblockX][xblockY][xblockZ] = block;
+    void setBlock(u8 blockX, u8 blockY, u8 blockZ, Block block) {
+        blocks[blockX][blockY][blockZ] = block;
+    }
+
+    s32 getX() const {
+        return x;
+    }
+
+    s32 getZ() const {
+        return z;
     }
 
 private:
-    BlockType blocks[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
-    s32 x, z;
+    World& world;
     int uPosition;
+    s32 x, z;
+
+    Block blocks[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
 
     bool allocated = false;
     VboData vboData;

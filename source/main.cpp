@@ -66,12 +66,10 @@ int main(int argc, char **argv) {
 	// Top render target
 	C3D_RenderTarget* topRenderTarget = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
 	C3D_RenderTargetSetOutput(topRenderTarget, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
-	C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
 
 	// Bottom render target
 	C3D_RenderTarget* bottomRenderTarget = C3D_RenderTargetCreate(240, 320, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
 	C3D_RenderTargetSetOutput(bottomRenderTarget, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
-	C3D_RenderTargetClear(bottomRenderTarget, C3D_CLEAR_ALL, 0xFF0000FF, 0);
 
 	// Shader
 	DVLB_s* vertexShader_dvlb = DVLB_ParseFile((u32*)vshader_shbin, vshader_shbin_size);
@@ -121,12 +119,12 @@ int main(int argc, char **argv) {
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
 	C3D_LightPosition(&light, &lightVector);
 
-	// World
-	World world(uPosition);
-
 	// Camera
 	Camera camera;
 	camera.position.y = CHUNK_HEIGHT + 2.0f;
+
+	// World
+	World world(camera, uPosition);
 
 	touchPosition lastTouch{0, 0};
 
@@ -178,7 +176,7 @@ int main(int argc, char **argv) {
         // Render
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         {
-            C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
+            C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0x0080E0FF, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
             // Projection matrx
