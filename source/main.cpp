@@ -8,74 +8,6 @@ const u32 DISPLAY_TRANSFER_FLAGS = \
 		GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8) | \
 		GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO));
 
-struct Vertex {
-	float positions[3];
-	float texcoords[2];
-	float normals[3];
-};
-
-const Vertex vertices[] = {
-	// First face (PZ)
-	// First triangle
-	{ {-0.5f, -0.5f, +0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, +1.0f} },
-	{ {+0.5f, -0.5f, +0.5f}, {1.0f, 0.0f}, {0.0f, 0.0f, +1.0f} },
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, +1.0f} },
-	// Second triangle
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, +1.0f} },
-	{ {-0.5f, +0.5f, +0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, +1.0f} },
-	{ {-0.5f, -0.5f, +0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, +1.0f} },
-
-	// Second face (MZ)
-	// First triangle
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} },
-	{ {-0.5f, +0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} },
-	{ {+0.5f, +0.5f, -0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} },
-	// Second triangle
-	{ {+0.5f, +0.5f, -0.5f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} },
-	{ {+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} },
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} },
-
-	// Third face (PX)
-	// First triangle
-	{ {+0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {+1.0f, 0.0f, 0.0f} },
-	{ {+0.5f, +0.5f, -0.5f}, {1.0f, 0.0f}, {+1.0f, 0.0f, 0.0f} },
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {+1.0f, 0.0f, 0.0f} },
-	// Second triangle
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {+1.0f, 0.0f, 0.0f} },
-	{ {+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f}, {+1.0f, 0.0f, 0.0f} },
-	{ {+0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {+1.0f, 0.0f, 0.0f} },
-
-	// Fourth face (MX)
-	// First triangle
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} },
-	{ {-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} },
-	{ {-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f} },
-	// Second triangle
-	{ {-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f} },
-	{ {-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f}, {-1.0f, 0.0f, 0.0f} },
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} },
-
-	// Fifth face (PY)
-	// First triangle
-	{ {-0.5f, +0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, +1.0f, 0.0f} },
-	{ {-0.5f, +0.5f, +0.5f}, {1.0f, 0.0f}, {0.0f, +1.0f, 0.0f} },
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, +1.0f, 0.0f} },
-	// Second triangle
-	{ {+0.5f, +0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, +1.0f, 0.0f} },
-	{ {+0.5f, +0.5f, -0.5f}, {0.0f, 1.0f}, {0.0f, +1.0f, 0.0f} },
-	{ {-0.5f, +0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, +1.0f, 0.0f} },
-
-	// Sixth face (MY)
-	// First triangle
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f} },
-	{ {+0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, -1.0f, 0.0f} },
-	{ {+0.5f, -0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, -1.0f, 0.0f} },
-	// Second triangle
-	{ {+0.5f, -0.5f, +0.5f}, {1.0f, 1.0f}, {0.0f, -1.0f, 0.0f} },
-	{ {-0.5f, -0.5f, +0.5f}, {0.0f, 1.0f}, {0.0f, -1.0f, 0.0f} },
-	{ {-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f} },
-};
-
 const C3D_Material material = {
 	{ 0.2f, 0.2f, 0.2f }, // Ambient
 	{ 0.4f, 0.4f, 0.4f }, // Diffuse
@@ -159,13 +91,6 @@ int main(int argc, char **argv) {
 	AttrInfo_AddLoader(attributeInfo, 1, GPU_FLOAT, 2); // Texture coordinate
 	AttrInfo_AddLoader(attributeInfo, 2, GPU_FLOAT, 3); // Normal
 
-	// Vertex buffer
-	void* vboData = linearAlloc(sizeof(vertices));
-	memcpy(vboData, vertices, sizeof(vertices));
-	C3D_BufInfo* vertexBuffer = C3D_GetBufInfo();
-	BufInfo_Init(vertexBuffer);
-	BufInfo_Add(vertexBuffer, vboData, sizeof(Vertex), 3, 0x210);
-
 	// Load texture
 	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/texture_atlas.t3x");
 	C3D_TexBind(0, texture);
@@ -201,6 +126,8 @@ int main(int argc, char **argv) {
 
 	// Camera
 	Camera camera;
+	camera.position.y = CHUNK_HEIGHT + 2.0f;
+
 	touchPosition lastTouch{0, 0};
 
 	// HACK
@@ -254,11 +181,6 @@ int main(int argc, char **argv) {
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
-            //camera.position.y = std::sin(t);
-            //camera.position.y = std::cos(t);
-            //camera.direction.x = sinf(t);
-            //camera.direction.z = cosf(t);
-
             // Projection matrx
             C3D_Mtx projection;
     		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, true);
@@ -272,9 +194,6 @@ int main(int argc, char **argv) {
 
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);
-
-            // Bind the vertex buffer
-            C3D_SetBufInfo(vertexBuffer);
 
             // Draw the world
             world.render();

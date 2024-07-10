@@ -12,7 +12,7 @@ public:
     World(int uPosition_);
     ~World() = default;
 
-    void render() const;
+    void render();
 
 private:
     std::vector<Chunk> chunks;

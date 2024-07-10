@@ -10,8 +10,8 @@ World::World(int uPosition_) : uPosition{uPosition_} {
     }
 }
 
-void World::render() const {
-    for (const auto& chunk : chunks) {
+void World::render() {
+    for (auto& chunk : chunks) {
         chunk.render();
     }
 }
