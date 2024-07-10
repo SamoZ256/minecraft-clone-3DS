@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
 
 	// Lighting properties
-	C3D_FVec lightVector = {{ 0.0, 0.0, -1.0, 0.0 }};
+	C3D_FVec lightVector = {{ .z = 0.5f, .y = 1.0f, .x = 0.25f }};
 	C3D_Light light;
 	C3D_LightInit(&light, &lightEnvironment);
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
@@ -154,8 +154,8 @@ int main(int argc, char **argv) {
             dpad = FVec3_Normalize(dpad);
 
         // Move
-        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.05f);
-                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.05f));
+        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.2f);
+                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.2f));
         //movement.y = 0.0f;
         camera.position = FVec3_Add(camera.position, movement);
 
@@ -164,11 +164,11 @@ int main(int argc, char **argv) {
         hidTouchRead(&touch);
         // If held, but not pressed just this frame
         if ((hidKeysHeld() & KEY_TOUCH) && !(hidKeysDown() & KEY_TOUCH)) {
-            float rotX = (touch.py - lastTouch.py) * 0.01f;
-            float rotY = (touch.px - lastTouch.px) * 0.01f;
+            float rotX = (touch.py - lastTouch.py) * 0.008f;
+            float rotY = (touch.px - lastTouch.px) * 0.008f;
 
-            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX * 0.5f, false);
-            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY * 0.5f, false);
+            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
+            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
         }
         lastTouch = touch;
 
