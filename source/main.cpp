@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
             C3D_Mtx viewProj;
             Mtx_Multiply(&viewProj, &projection, &view);
 
-            std::cout << camera.position.x << " " << camera.position.z << std::endl;
+            //std::cout << camera.position.x << " " << camera.position.z << std::endl;
 
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);

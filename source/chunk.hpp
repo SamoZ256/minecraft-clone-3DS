@@ -4,7 +4,7 @@
 #include "vertex.hpp"
 
 const u8 CHUNK_WIDTH = 8;
-const u8 CHUNK_HEIGHT = 8;
+const u8 CHUNK_HEIGHT = 32;
 
 struct VboData {
     void* data;

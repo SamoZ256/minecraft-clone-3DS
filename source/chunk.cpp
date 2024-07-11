@@ -1,15 +1,22 @@
 #include "chunk.hpp"
 
+#define DB_PERLIN_IMPL
+#include "db_perlin.hpp"
+
 #include "world.hpp"
 
+const double NOISE_SCALE = 1.0 / CHUNK_WIDTH * 0.25;
+
 Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
-    // HACK
-    //s32 a = -x -(z % 2);
-    //if (a < 0) a = -a;
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
-        for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
-            for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-                if (blockY > CHUNK_HEIGHT - 2 + rand() % 2) continue;
+        for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
+            // HACK: use abs, since negative coords give weird value for some reason
+            double noise = db::perlin(std::abs(x * CHUNK_WIDTH + blockX) * NOISE_SCALE, std::abs(z * CHUNK_WIDTH + blockZ) * NOISE_SCALE) * 0.5 + 0.5;
+            if (noise < 0.0) noise = 0.0;
+            if (noise > 1.0) noise = 1.0;
+            s32 height = (0.125 + 0.875 * noise) * CHUNK_HEIGHT;
+            //std::cout << noise << " : " << height << std::endl;
+            for (s32 blockY = 0; blockY < height; blockY++) {
                 blocks[blockX][blockY][blockZ].ty = static_cast<BlockType>(1 + rand() % 2);
                 if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
                     blockZ == 0 || blockZ == CHUNK_WIDTH - 1)
