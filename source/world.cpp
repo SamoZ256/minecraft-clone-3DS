@@ -3,8 +3,8 @@
 World::World(const Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {
     chunks.reserve((RENDER_DISTANCE * 2 + 1) * (RENDER_DISTANCE * 2 + 1));
 
-    for (s16 z = -RENDER_DISTANCE; z <= RENDER_DISTANCE; z++) {
-        for (s16 x = -RENDER_DISTANCE; x <= RENDER_DISTANCE; x++) {
+    for (s32 z = -TRACK_DISTANCE; z <= TRACK_DISTANCE; z++) {
+        for (s32 x = -TRACK_DISTANCE; x <= TRACK_DISTANCE; x++) {
             chunks.emplace_back(*this, uPosition, x, z);
         }
     }

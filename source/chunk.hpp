@@ -3,8 +3,8 @@
 #include "block.hpp"
 #include "vertex.hpp"
 
-const u8 CHUNK_WIDTH = 8;
-const u8 CHUNK_HEIGHT = 16;
+const u8 CHUNK_WIDTH = 16;
+const u8 CHUNK_HEIGHT = 64;
 
 struct VboData {
     void* vertexData;
