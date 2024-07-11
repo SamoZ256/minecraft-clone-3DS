@@ -16,6 +16,10 @@ struct VboData {
         data = linearAlloc(vertexCount * sizeof(Vertex));
         memcpy(data, vertices.data(), vertexCount * sizeof(Vertex));
     }
+
+    void freeData() {
+        linearFree(data);
+    }
 };
 
 class World;
@@ -26,6 +30,8 @@ public:
     ~Chunk() = default;
 
     void render();
+
+    void freeData();
 
     Block getBlock(s32 blockX, s32 blockY, s32 blockZ) const {
         return blocks[blockX][blockY][blockZ];

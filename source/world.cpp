@@ -15,10 +15,13 @@ void World::render() {
 
     for (s16 z = -RENDER_DISTANCE; z <= RENDER_DISTANCE; z++) {
         for (s16 x = -RENDER_DISTANCE; x <= RENDER_DISTANCE; x++) {
-            Chunk* chunk = getTrackedChunk(x, z);
-            if (chunk) {
-                // TODO: check if in the circle
-                chunk->render();
+            // Only render chunks within the render distance
+            // < is used instead of <= to prevent that one chunk on the edge from sticking out
+            if ((x * x + z * z) < RENDER_DISTANCE * RENDER_DISTANCE) {
+                Chunk* chunk = getTrackedChunk(x, z);
+                if (chunk) {
+                    chunk->render();
+                }
             }
         }
     }
@@ -39,6 +42,8 @@ void World::findTrackedChunks() {
         s32 chunkRelZ = chunk.getZ() - cameraChunkZ;
         if (std::abs(chunkRelX) <= TRACK_DISTANCE && std::abs(chunkRelZ) <= TRACK_DISTANCE) {
             getTrackedChunk(chunkRelX, chunkRelZ) = &chunk;
+        } else {
+            chunk.freeData();
         }
     }
 

@@ -5,7 +5,7 @@
 #include "chunk.hpp"
 #include "camera.hpp"
 
-const s32 RENDER_DISTANCE = 3;
+const s32 RENDER_DISTANCE = 4;
 const s32 TRACK_DISTANCE = RENDER_DISTANCE + 2;
 const s32 TRACK_GRID_SIZE = TRACK_DISTANCE * 2 + 1;
 
@@ -51,6 +51,7 @@ public:
     Chunk* trackedChunks[TRACK_GRID_SIZE][TRACK_GRID_SIZE];
 
     Chunk*& getTrackedChunk(s32 chunkRelX, s32 chunkRelZ) {
+        // HACK: just in case
         if (chunkRelX > TRACK_DISTANCE || chunkRelX < -TRACK_DISTANCE || chunkRelZ > TRACK_DISTANCE || chunkRelZ < -TRACK_DISTANCE) {
             std::cout << "error: " << chunkRelX << ", " << chunkRelZ << std::endl;
         }

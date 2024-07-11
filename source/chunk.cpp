@@ -14,15 +14,32 @@ Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPo
             double noise = db::perlin(std::abs(x * CHUNK_WIDTH + blockX) * NOISE_SCALE, std::abs(z * CHUNK_WIDTH + blockZ) * NOISE_SCALE) * 0.5 + 0.5;
             if (noise < 0.0) noise = 0.0;
             if (noise > 1.0) noise = 1.0;
-            s32 height = (0.125 + 0.875 * noise) * CHUNK_HEIGHT;
-            //std::cout << noise << " : " << height << std::endl;
+            s32 height = (0.5 + 0.5 * noise) * CHUNK_HEIGHT;
+            s32 dirtLayerWidth = 2 + rand() % 3;
             for (s32 blockY = 0; blockY < height; blockY++) {
-                blocks[blockX][blockY][blockZ].ty = static_cast<BlockType>(1 + rand() % 2);
+                BlockType& blockTy = blocks[blockX][blockY][blockZ].ty;
+                if (blockY == height - 1) {
+                    blockTy = BlockType::Grass;
+                } else if (blockY >= height - dirtLayerWidth - 1) {
+                    blockTy = BlockType::Dirt;
+                } else {
+                    blockTy = BlockType::Stone;
+                }
+
+                // HACK: for debugging
                 if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
-                    blockZ == 0 || blockZ == CHUNK_WIDTH - 1)
-                    blocks[blockX][blockY][blockZ].ty = BlockType::Stone;
+                    blockZ == 0 || blockZ == CHUNK_WIDTH - 1) {
+                    blockTy = BlockType::Stone;
+                }
             }
         }
+    }
+}
+
+void Chunk::freeData() {
+    if (allocated) {
+        vboData.freeData();
+        allocated = false;
     }
 }
 
@@ -90,10 +107,10 @@ void Chunk::allocate() {
                     if (checkBlock.ty == BlockType::None) {
                         for (u8 v = 0; v < 6; v++) {
                             Vertex vertex = cubeVertices[face][v];
-                            vertex.position.x += blockX;
-                            vertex.position.y += blockY;
-                            vertex.position.z += blockZ;
-                            vertex.texCoord.x = texCoordOffset * textureSizeWithBorderNorm + vertex.texCoord.x * textureSizeNorm;
+                            vertex.position[0] += blockX;
+                            vertex.position[1] += blockY;
+                            vertex.position[2] += blockZ;
+                            vertex.texCoord.u = texCoordOffset * textureSizeWithBorderNorm + vertex.texCoord.u * textureSizeNorm;
                             vertices.push_back(vertex);
                         }
                     }
