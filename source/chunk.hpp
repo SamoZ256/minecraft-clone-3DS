@@ -4,21 +4,29 @@
 #include "vertex.hpp"
 
 const u8 CHUNK_WIDTH = 8;
-const u8 CHUNK_HEIGHT = 32;
+const u8 CHUNK_HEIGHT = 16;
 
 struct VboData {
-    void* data;
-    size_t vertexCount;
+    void* vertexData;
+    void* indexData;
+    size_t indexCount;
 
     VboData() = default;
-    VboData(const std::vector<Vertex>& vertices) {
-        vertexCount = vertices.size();
-        data = linearAlloc(vertexCount * sizeof(Vertex));
-        memcpy(data, vertices.data(), vertexCount * sizeof(Vertex));
+    VboData(const std::vector<Vertex>& vertices, const std::vector<u16>& indices) {
+        indexCount = indices.size();
+
+        // Vertices
+        vertexData = linearAlloc(vertices.size() * sizeof(Vertex));
+        memcpy(vertexData, vertices.data(), vertices.size() * sizeof(Vertex));
+
+        // Indices
+        indexData = linearAlloc(indices.size() * sizeof(u16));
+        memcpy(indexData, indices.data(), indices.size() * sizeof(u16));
     }
 
     void freeData() {
-        linearFree(data);
+        linearFree(vertexData);
+        linearFree(indexData);
     }
 };
 

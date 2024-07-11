@@ -87,13 +87,17 @@ void Chunk::render() {
     C3D_SetBufInfo(&vbo);
 
     // Draw
-    C3D_DrawArrays(GPU_TRIANGLES, 0, vboData.vertexCount);
+    C3D_DrawElements(GPU_TRIANGLES, vboData.indexCount, C3D_UNSIGNED_SHORT, vboData.indexData);
 }
 
 void Chunk::allocate() {
     std::vector<Vertex> vertices;
-    vertices.reserve(2048);
+    vertices.reserve(1024);
 
+    std::vector<u16> indices;
+    indices.reserve(1536);
+
+    u16 facesPushed = 0;
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
             for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
@@ -137,7 +141,7 @@ void Chunk::allocate() {
                     }
 
                     if (checkBlock.ty == BlockType::None) {
-                        for (u8 v = 0; v < 6; v++) {
+                        for (u8 v = 0; v < 4; v++) {
                             Vertex vertex = cubeVertices[face][v];
                             vertex.position[0] += blockX;
                             vertex.position[1] += blockY;
@@ -145,6 +149,11 @@ void Chunk::allocate() {
                             vertex.texCoord.u = texCoordOffset * textureSizeWithBorderNorm + vertex.texCoord.u * textureSizeNorm;
                             vertices.push_back(vertex);
                         }
+                        for (u8 i = 0; i < 6; i++) {
+                            u16 index = faceIndices[i];
+                            indices.push_back(facesPushed * 4 + index);
+                        }
+                        facesPushed++;
                     }
                 }
             }
@@ -152,9 +161,9 @@ void Chunk::allocate() {
     }
 
     // Allocate VBO
-    vboData = VboData(vertices);
+    vboData = VboData(vertices, indices);
 	BufInfo_Init(&vbo);
-	BufInfo_Add(&vbo, vboData.data, sizeof(Vertex), 3, 0x210);
+	BufInfo_Add(&vbo, vboData.vertexData, sizeof(Vertex), 3, 0x210);
 
     allocated = true;
 }
