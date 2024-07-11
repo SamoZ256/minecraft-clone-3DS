@@ -5,31 +5,33 @@
 
 #include "world.hpp"
 
-const double NOISE_SCALE = 1.0 / CHUNK_WIDTH * 0.25;
+const double NOISE_FREQ = 0.08;
 
 Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-            // HACK: use abs, since negative coords give weird value for some reason
-            double noise = db::perlin(std::abs(x * CHUNK_WIDTH + blockX) * NOISE_SCALE, std::abs(z * CHUNK_WIDTH + blockZ) * NOISE_SCALE) * 0.5 + 0.5;
-            if (noise < 0.0) noise = 0.0;
-            if (noise > 1.0) noise = 1.0;
-            s32 height = (0.5 + 0.5 * noise) * CHUNK_HEIGHT;
-            s32 dirtLayerWidth = 2 + rand() % 3;
-            for (s32 blockY = 0; blockY < height; blockY++) {
-                BlockType& blockTy = blocks[blockX][blockY][blockZ].ty;
-                if (blockY == height - 1) {
-                    blockTy = BlockType::Grass;
-                } else if (blockY >= height - dirtLayerWidth - 1) {
-                    blockTy = BlockType::Dirt;
-                } else {
-                    blockTy = BlockType::Stone;
-                }
+            const double terrainBias = 0.7; // The higher the value the more flat the terrain is
+            const double terrainYOffset = 0.0; // Higher values will make the biome deeper, lower values will make it taller
+            for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
+                // HACK: use abs, since negative coords give weird value for some reason
+                double noise = db::perlin((x * CHUNK_WIDTH + blockX) * NOISE_FREQ, blockY * NOISE_FREQ, (z * CHUNK_WIDTH + blockZ) * NOISE_FREQ);
 
-                // HACK: for debugging
-                if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
-                    blockZ == 0 || blockZ == CHUNK_WIDTH - 1) {
-                    blockTy = BlockType::Stone;
+                // Exponential ease
+                double yNorm = (double)blockY / CHUNK_HEIGHT + terrainYOffset;
+                double shift = yNorm <= 0.5 ? pow(yNorm * 2.0, terrainBias) / 2.0 : 1.0 - pow((1.0 - yNorm) * 2.0, terrainBias) / 2.0;
+                shift = shift * 2.0 - 1.0;
+                // TODO: apply the shift differently?
+                noise += shift;
+
+                if (noise < 0.0) {
+                    BlockType& blockTy = blocks[blockX][blockY][blockZ].ty;
+                    blockTy = BlockType::Dirt;
+
+                    // HACK: for debugging
+                    if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
+                        blockZ == 0 || blockZ == CHUNK_WIDTH - 1) {
+                        blockTy = BlockType::Stone;
+                    }
                 }
             }
         }

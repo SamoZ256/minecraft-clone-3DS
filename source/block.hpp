@@ -13,10 +13,12 @@ enum class TextureType {
     DirtGrass,
     Grass,
     Stone,
+    WoodSide,
+    WoodTop,
+    Leaf,
 };
 
-const u8 textureCount = 5;
-const u16 textureAtlasWidth = 128;
+const u16 textureAtlasWidth = 256;
 const u8 textureSize = 16;
 // Textures have 1 pixel border on each side to prevent sampling to the other textures
 const u8 textureSizeWithBorder = textureSize + 2;
@@ -28,6 +30,8 @@ enum class BlockType {
     Dirt,
     Grass,
     Stone,
+    Wood,
+    Leaf,
 };
 
 struct Block {
@@ -37,10 +41,21 @@ struct Block {
     Block(BlockType ty_) : ty(ty_) {}
 };
 
+#define BLOCK_TEXTURES_ALL(textureTypeAll) \
+    {textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll}
+
+#define BLOCK_TEXTURES_SIDES_TOP(textureTypeSides, textureTypeTop) \
+    {textureTypeSides, textureTypeSides, textureTypeSides, textureTypeSides, textureTypeTop, textureTypeTop}
+
+#define BLOCK_TEXTURES_SIDES_TOP_BOTTOM(textureTypeSides, textureTypeTop, textureTypeBottom) \
+    {textureTypeSides, textureTypeSides, textureTypeSides, textureTypeSides, textureTypeTop, textureTypeBottom}
+
 // PZ, NZ, PX, NX, PY, NY
 constexpr TextureType blockTextures[][6] = {
-    {TextureType::None, TextureType::None, TextureType::None, TextureType::None, TextureType::None, TextureType::None},
-    {TextureType::Dirt, TextureType::Dirt, TextureType::Dirt, TextureType::Dirt, TextureType::Dirt, TextureType::Dirt},
-    {TextureType::DirtGrass, TextureType::DirtGrass, TextureType::DirtGrass, TextureType::DirtGrass, TextureType::Grass, TextureType::Dirt},
-    {TextureType::Stone, TextureType::Stone, TextureType::Stone, TextureType::Stone, TextureType::Stone, TextureType::Stone},
+    BLOCK_TEXTURES_ALL(TextureType::None),
+    BLOCK_TEXTURES_ALL(TextureType::Dirt),
+    BLOCK_TEXTURES_SIDES_TOP_BOTTOM(TextureType::DirtGrass, TextureType::Grass, TextureType::Dirt),
+    BLOCK_TEXTURES_ALL(TextureType::Stone),
+    BLOCK_TEXTURES_SIDES_TOP(TextureType::WoodSide, TextureType::WoodTop),
+    BLOCK_TEXTURES_ALL(TextureType::Leaf),
 };
