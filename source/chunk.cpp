@@ -10,13 +10,12 @@ const double NOISE_FREQ = 0.04;
 Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-            const double terrainBias = 0.7; // The higher the value the more flat the terrain is
+            const double terrainBias = 1.4; // The higher the value the more flat the terrain is
             const double terrainYOffset = 0.0; // Higher values will make the biome deeper, lower values will make it taller
 
             // Number of blocks in a row
             u8 groundBlockCount = 0;
             for (s32 blockY = CHUNK_HEIGHT - 1; blockY >= 0; blockY--) {
-                // HACK: use abs, since negative coords give weird value for some reason
                 double noise = db::perlin((x * CHUNK_WIDTH + blockX) * NOISE_FREQ, blockY * NOISE_FREQ, (z * CHUNK_WIDTH + blockZ) * NOISE_FREQ);
 
                 // Exponential ease
@@ -123,7 +122,6 @@ void Chunk::allocate() {
                     if (checkBlockX < 0 || checkBlockX >= CHUNK_WIDTH ||
                         checkBlockY < 0 || checkBlockY >= CHUNK_HEIGHT ||
                         checkBlockZ < 0 || checkBlockZ >= CHUNK_WIDTH) {
-                        //std::cout << "B1: " << x << ", " << z << " : " << checkBlockX << ", " << checkBlockZ << std::endl;
                         checkBlock = world.getBlock(x * CHUNK_WIDTH + checkBlockX, checkBlockY, z * CHUNK_WIDTH + checkBlockZ);
                     }
                     /*if (checkBlockX < 0) {
@@ -140,7 +138,7 @@ void Chunk::allocate() {
                         checkBlock = blocks[checkBlockX][checkBlockY][checkBlockZ];
                     }
 
-                    if (checkBlock.ty == BlockType::None) {
+                    if (getBlockFlags(checkBlock.ty) & BlockFlags::Transparent) {
                         for (u8 v = 0; v < 4; v++) {
                             Vertex vertex = cubeVertices[face][v];
                             vertex.position[0] += blockX;

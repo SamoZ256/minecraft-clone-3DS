@@ -41,6 +41,37 @@ struct Block {
     Block(BlockType ty_) : ty(ty_) {}
 };
 
+enum class BlockFlags {
+    None = 0x0,
+    Solid = 0x1,
+    Transparent = 0x2,
+};
+
+inline BlockFlags operator|(BlockFlags a, BlockFlags b) {
+    return static_cast<BlockFlags>(enumToInt(a) | enumToInt(b));
+}
+
+inline int operator&(BlockFlags a, BlockFlags b) {
+    return enumToInt(a) & enumToInt(b);
+}
+
+inline BlockFlags operator~(BlockFlags a) {
+    return static_cast<BlockFlags>(~enumToInt(a));
+}
+
+const BlockFlags blockFlags[] = {
+    BlockFlags::Transparent,
+    BlockFlags::Solid,
+    BlockFlags::Solid,
+    BlockFlags::Solid,
+    BlockFlags::Solid,
+    BlockFlags::Solid | BlockFlags::Transparent,
+};
+
+inline BlockFlags getBlockFlags(BlockType ty) {
+    return blockFlags[enumToInt(ty)];
+}
+
 #define BLOCK_TEXTURES_ALL(textureTypeAll) \
     {textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll, textureTypeAll}
 

@@ -1,3 +1,4 @@
+#include "chunk.hpp"
 #include "world.hpp"
 
 // Shader includes
@@ -42,6 +43,12 @@ C3D_Tex* loadT3XTexture(const char* filename) {
 
     return texture;
 }
+
+const float NEAR_PLANE = 0.001f;
+const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
+
+const u32 BG_COLOR_WITH_ALPHA = 0x0080E0FF;
+const u32 BG_COLOR_REVERSED = 0xE08000;
 
 int main(int argc, char **argv) {
     // Initialization
@@ -110,9 +117,9 @@ int main(int argc, char **argv) {
 	C3D_LightEnvMaterial(&lightEnvironment, &material);
 
 	// Light LUT texture
-	C3D_LightLut lutPhong;
-	LightLut_Phong(&lutPhong, 30);
-	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
+	C3D_LightLut phongLut;
+	LightLut_Phong(&phongLut, 30);
+	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &phongLut);
 
 	// Lighting properties
 	C3D_FVec lightVector = {{ .z = 0.5f, .y = 1.0f, .x = 0.25f }};
@@ -181,12 +188,12 @@ int main(int argc, char **argv) {
         // Render
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         {
-            C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, 0x0080E0FF, 0);
+            C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, BG_COLOR_WITH_ALPHA, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
             // Projection matrx
             C3D_Mtx projection;
-    		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, 0.01f, 1000.0f, interOcularDistance, 2.0f, true);
+    		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, NEAR_PLANE, FAR_PLANE, interOcularDistance, 2.0f, true);
 
             // View matrix
             C3D_Mtx view;
