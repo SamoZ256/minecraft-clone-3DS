@@ -5,9 +5,9 @@
 #include "chunk.hpp"
 #include "camera.hpp"
 
-const u8 RENDER_DISTANCE = 2;
-const u8 TRACK_DISTANCE = RENDER_DISTANCE + 1;
-const u8 TRACK_GRID_SIZE = TRACK_DISTANCE * 2 + 1;
+const s32 RENDER_DISTANCE = 2;
+const s32 TRACK_DISTANCE = RENDER_DISTANCE + 2;
+const s32 TRACK_GRID_SIZE = TRACK_DISTANCE * 2 + 1;
 
 class World {
 public:
@@ -17,27 +17,30 @@ public:
     void render();
 
     Block getBlock(s32 x, s32 y, s32 z) {
-        // TODO: uncomment
-        /*
         if (y < 0 || y >= CHUNK_HEIGHT) {
             return Block(BlockType::None);
         }
 
-        s32 chunkX = x / CHUNK_WIDTH;
-        s32 chunkZ = z / CHUNK_WIDTH;
+        s32 chunkX = std::floor((float)x / (float)CHUNK_WIDTH);
+        s32 chunkZ = std::floor((float)z / (float)CHUNK_WIDTH);
         s32 chunkRelX = chunkX - cameraChunkX;
         s32 chunkRelZ = chunkZ - cameraChunkZ;
-        const Chunk* chunk = getTrackedChunk(chunkRelX, chunkRelZ);
-        if (chunk == nullptr) {
+        if (std::abs(chunkRelX) > TRACK_DISTANCE || std::abs(chunkRelZ) > TRACK_DISTANCE) {
             return Block(BlockType::None);
         }
 
-        return chunk->getBlock(x % CHUNK_WIDTH, y, z % CHUNK_WIDTH);
-        */
-        return Block(BlockType::None);
+        Chunk* chunk = getTrackedChunk(chunkRelX, chunkRelZ);
+        if (!chunk) {
+            return Block(BlockType::None);
+        }
+        //std::cout << "B2: " << chunkX << ", " << chunkZ << " : " << x - chunkX * CHUNK_WIDTH << ", " << z - chunkZ * CHUNK_WIDTH << std::endl;
+        //std::cout << "B3: " << chunk->getX() << ", " << chunk->getZ() << std::endl;
+
+        //return Block(BlockType::Dirt);
+        return chunk->getBlock(x - chunkX * CHUNK_WIDTH, y, z - chunkZ * CHUNK_WIDTH);
     }
 
-private:
+public:
     const Camera& camera;
     int uPosition;
 
@@ -48,7 +51,10 @@ private:
     Chunk* trackedChunks[TRACK_GRID_SIZE][TRACK_GRID_SIZE];
 
     Chunk*& getTrackedChunk(s32 chunkRelX, s32 chunkRelZ) {
-        // TODO: check if out of bounds
+        if (chunkRelX > TRACK_DISTANCE || chunkRelX < -TRACK_DISTANCE || chunkRelZ > TRACK_DISTANCE || chunkRelZ < -TRACK_DISTANCE) {
+            std::cout << "error: " << chunkRelX << ", " << chunkRelZ << std::endl;
+        }
+
         return trackedChunks[chunkRelX + TRACK_DISTANCE][chunkRelZ + TRACK_DISTANCE];
     }
 

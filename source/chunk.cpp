@@ -4,10 +4,16 @@
 
 Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
     // HACK
+    //s32 a = -x -(z % 2);
+    //if (a < 0) a = -a;
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
             for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-                blocks[blockX][blockY][blockZ].ty = static_cast<BlockType>(1 + rand() % 3);
+                if (blockY > CHUNK_HEIGHT - 2 + rand() % 2) continue;
+                blocks[blockX][blockY][blockZ].ty = static_cast<BlockType>(1 + rand() % 2);
+                if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
+                    blockZ == 0 || blockZ == CHUNK_WIDTH - 1)
+                    blocks[blockX][blockY][blockZ].ty = BlockType::Stone;
             }
         }
     }
@@ -19,10 +25,10 @@ void Chunk::render() {
     }
 
     // Set position
-    C3D_FVUnifSet(GPU_VERTEX_SHADER, uPosition, x * CHUNK_WIDTH , 0.0f, z * CHUNK_WIDTH, 1.0f);
+    C3D_FVUnifSet(GPU_VERTEX_SHADER, uPosition, x * CHUNK_WIDTH, 0.0f, z * CHUNK_WIDTH, 1.0f);
 
     // Bind the VBO
-    C3D_SetBufInfo(vbo);
+    C3D_SetBufInfo(&vbo);
 
     // Draw
     C3D_DrawArrays(GPU_TRIANGLES, 0, vboData.vertexCount);
@@ -30,12 +36,12 @@ void Chunk::render() {
 
 void Chunk::allocate() {
     std::vector<Vertex> vertices;
-    vertices.reserve(1024);
+    vertices.reserve(2048);
 
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
             for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-                const Block& block = blocks[blockX][blockY][blockZ];
+                Block block = blocks[blockX][blockY][blockZ];
                 if (block.ty == BlockType::None) continue;
                 for (u8 face = 0; face < 6; face++) {
                     float texCoordOffset = enumToInt(blockTextures[enumToInt(block.ty)][face]);
@@ -57,8 +63,20 @@ void Chunk::allocate() {
                     if (checkBlockX < 0 || checkBlockX >= CHUNK_WIDTH ||
                         checkBlockY < 0 || checkBlockY >= CHUNK_HEIGHT ||
                         checkBlockZ < 0 || checkBlockZ >= CHUNK_WIDTH) {
+                        //std::cout << "B1: " << x << ", " << z << " : " << checkBlockX << ", " << checkBlockZ << std::endl;
                         checkBlock = world.getBlock(x * CHUNK_WIDTH + checkBlockX, checkBlockY, z * CHUNK_WIDTH + checkBlockZ);
-                    } else {
+                    }
+                    /*if (checkBlockX < 0) {
+                        checkBlock = world.getTrackedChunk(x - 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(CHUNK_WIDTH - 1, checkBlockY, checkBlockZ);
+                    } else if (checkBlockX >= CHUNK_WIDTH) {
+                        checkBlock = world.getTrackedChunk(x + 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(0, checkBlockY, checkBlockZ);
+                    } else if (checkBlockZ < 0) {
+                        checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z - 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, CHUNK_WIDTH - 1);
+                    } else if (checkBlockZ >= CHUNK_WIDTH) {
+                        checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z + 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, 0);
+                    } else if (checkBlockY < 0 || checkBlockY >= CHUNK_WIDTH) {
+                        checkBlock = Block(BlockType::None);
+                    }*/ else {
                         checkBlock = blocks[checkBlockX][checkBlockY][checkBlockZ];
                     }
 
@@ -79,9 +97,8 @@ void Chunk::allocate() {
 
     // Allocate VBO
     vboData = VboData(vertices);
-	vbo = C3D_GetBufInfo();
-	BufInfo_Init(vbo);
-	BufInfo_Add(vbo, vboData.data, sizeof(Vertex), 3, 0x210);
+	BufInfo_Init(&vbo);
+	BufInfo_Add(&vbo, vboData.data, sizeof(Vertex), 3, 0x210);
 
     allocated = true;
 }

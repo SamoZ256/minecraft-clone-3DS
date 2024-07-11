@@ -17,7 +17,7 @@ struct PackedVec2 {
 
 template<typename T>
 struct PackedVec3 {
-    T z, y, x;
+    T x, y, z;
 
-    PackedVec3(T x_, T y_, T z_) : z{z_}, y{y_}, x{x_} {}
+    PackedVec3(T x_, T y_, T z_) : x{x_}, y{y_}, z{z_} {}
 };

@@ -27,11 +27,11 @@ public:
 
     void render();
 
-    Block getBlock(u8 blockX, u8 blockY, u8 blockZ) const {
+    Block getBlock(s32 blockX, s32 blockY, s32 blockZ) const {
         return blocks[blockX][blockY][blockZ];
     }
 
-    void setBlock(u8 blockX, u8 blockY, u8 blockZ, Block block) {
+    void setBlock(s32 blockX, s32 blockY, s32 blockZ, Block block) {
         blocks[blockX][blockY][blockZ] = block;
     }
 
@@ -52,7 +52,7 @@ private:
 
     bool allocated = false;
     VboData vboData;
-    C3D_BufInfo* vbo;
+    C3D_BufInfo vbo;
 
     void allocate();
 };

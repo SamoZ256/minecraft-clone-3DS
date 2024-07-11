@@ -152,8 +152,8 @@ int main(int argc, char **argv) {
             dpad = FVec3_Normalize(dpad);
 
         // Move
-        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.2f);
-                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.2f));
+        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.5f);
+                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.5f));
         //movement.y = 0.0f;
         camera.position = FVec3_Add(camera.position, movement);
 
@@ -165,8 +165,8 @@ int main(int argc, char **argv) {
             float rotX = (touch.py - lastTouch.py) * 0.008f;
             float rotY = (touch.px - lastTouch.px) * 0.008f;
 
-            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
             camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
+            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
         }
         lastTouch = touch;
 
@@ -185,10 +185,14 @@ int main(int argc, char **argv) {
 
             // View matrix
             C3D_Mtx view;
-    		Mtx_LookAt(&view, camera.position, FVec3_Add(camera.position, camera.direction), camera.up, true);
+            // HACK: divide the position by 2
+            C3D_FVec tempPos = vec3ScalarMultiply(camera.position, 0.5f);
+    		Mtx_LookAt(&view, tempPos, FVec3_Add(tempPos, camera.direction), camera.up, true);
 
             C3D_Mtx viewProj;
             Mtx_Multiply(&viewProj, &projection, &view);
+
+            std::cout << camera.position.x << " " << camera.position.z << std::endl;
 
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);
