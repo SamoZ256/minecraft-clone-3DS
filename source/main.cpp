@@ -103,11 +103,13 @@ int main(int argc, char **argv) {
 	//C3D_TexEnvSrc(env, C3D_Both, GPU_PREVIOUS, GPU_FRAGMENT_SECONDARY_COLOR, (GPU_TEVSRC)0);
 	//C3D_TexEnvFunc(env, C3D_RGB, GPU_ADD);
 
+	// Light
 	C3D_LightEnv lightEnvironment;
 	C3D_LightEnvInit(&lightEnvironment);
 	C3D_LightEnvBind(&lightEnvironment);
 	C3D_LightEnvMaterial(&lightEnvironment, &material);
 
+	// Light LUT texture
 	C3D_LightLut lutPhong;
 	LightLut_Phong(&lutPhong, 30);
 	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
@@ -118,6 +120,9 @@ int main(int argc, char **argv) {
 	C3D_LightInit(&light, &lightEnvironment);
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
 	C3D_LightPosition(&light, &lightVector);
+
+	// Alpha test
+	C3D_AlphaTest(true, GPU_GREATER, 0.5f);
 
 	// Camera
 	Camera camera;

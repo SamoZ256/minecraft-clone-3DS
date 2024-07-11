@@ -15,7 +15,7 @@ enum class TextureType {
     Stone,
     WoodSide,
     WoodTop,
-    Leaf,
+    Leaves,
 };
 
 const u16 textureAtlasWidth = 256;
@@ -31,7 +31,7 @@ enum class BlockType {
     Grass,
     Stone,
     Wood,
-    Leaf,
+    Leaves,
 };
 
 struct Block {
@@ -57,5 +57,5 @@ constexpr TextureType blockTextures[][6] = {
     BLOCK_TEXTURES_SIDES_TOP_BOTTOM(TextureType::DirtGrass, TextureType::Grass, TextureType::Dirt),
     BLOCK_TEXTURES_ALL(TextureType::Stone),
     BLOCK_TEXTURES_SIDES_TOP(TextureType::WoodSide, TextureType::WoodTop),
-    BLOCK_TEXTURES_ALL(TextureType::Leaf),
+    BLOCK_TEXTURES_ALL(TextureType::Leaves),
 };

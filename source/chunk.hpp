@@ -41,6 +41,14 @@ public:
         blocks[blockX][blockY][blockZ] = block;
     }
 
+    void setBlockChecked(s32 blockX, s32 blockY, s32 blockZ, Block block) {
+        if (blockX >= 0 && blockX < CHUNK_WIDTH &&
+            blockY >= 0 && blockY < CHUNK_HEIGHT &&
+            blockZ >= 0 && blockZ < CHUNK_WIDTH) {
+            setBlock(blockX, blockY, blockZ, block);
+        }
+    }
+
     s32 getX() const {
         return x;
     }

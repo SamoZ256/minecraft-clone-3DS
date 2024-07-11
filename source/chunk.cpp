@@ -5,14 +5,17 @@
 
 #include "world.hpp"
 
-const double NOISE_FREQ = 0.08;
+const double NOISE_FREQ = 0.04;
 
 Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
             const double terrainBias = 0.7; // The higher the value the more flat the terrain is
             const double terrainYOffset = 0.0; // Higher values will make the biome deeper, lower values will make it taller
-            for (s32 blockY = 0; blockY < CHUNK_HEIGHT; blockY++) {
+
+            // Number of blocks in a row
+            u8 groundBlockCount = 0;
+            for (s32 blockY = CHUNK_HEIGHT - 1; blockY >= 0; blockY--) {
                 // HACK: use abs, since negative coords give weird value for some reason
                 double noise = db::perlin((x * CHUNK_WIDTH + blockX) * NOISE_FREQ, blockY * NOISE_FREQ, (z * CHUNK_WIDTH + blockZ) * NOISE_FREQ);
 
@@ -24,14 +27,41 @@ Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPo
                 noise += shift;
 
                 if (noise < 0.0) {
+                    groundBlockCount++;
+
                     BlockType& blockTy = blocks[blockX][blockY][blockZ].ty;
-                    blockTy = BlockType::Dirt;
+                    if (groundBlockCount == 1) {
+                        blockTy = BlockType::Grass;
+
+                        // Generate a tree
+                        if (rand() % 128 == 0) {
+                            // Trunk
+                            for (s32 i = 0; i < 4 + rand() % 3; i++) {
+                                setBlockChecked(blockX, blockY + 1 + i, blockZ, {BlockType::Wood});
+                            }
+
+                            // Leaves
+                            for (s32 i = 0; i < 3; i++) {
+                                for (s32 j = -1; j <= 1; j++) {
+                                    for (s32 k = -1; k <= 1; k++) {
+                                        setBlockChecked(blockX + j, blockY + 4 + i, blockZ + k, BlockType::Leaves);
+                                    }
+                                }
+                            }
+                        }
+                    } else if (groundBlockCount <= 2 + rand() % 3) {
+                        blockTy = BlockType::Dirt;
+                    } else {
+                        blockTy = BlockType::Stone;
+                    }
 
                     // HACK: for debugging
                     if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
                         blockZ == 0 || blockZ == CHUNK_WIDTH - 1) {
                         blockTy = BlockType::Stone;
                     }
+                } else {
+                    groundBlockCount = 0;
                 }
             }
         }
