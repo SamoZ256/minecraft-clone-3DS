@@ -40,6 +40,10 @@ public:
         return chunk->getBlock(x - chunkX * CHUNK_WIDTH, y, z - chunkZ * CHUNK_WIDTH);
     }
 
+    const Camera& getCamera() const {
+        return camera;
+    }
+
 private:
     const Camera& camera;
     int uPosition;

@@ -79,7 +79,9 @@ void Chunk::render() {
     }
 
     // Set position
-    C3D_FVUnifSet(GPU_VERTEX_SHADER, uPosition, x * CHUNK_WIDTH, 0.0f, z * CHUNK_WIDTH, 1.0f);
+    C3D_FVec position{.z = z * CHUNK_WIDTH, 0.0f, x * CHUNK_WIDTH};
+    position = FVec3_Subtract(position, world.getCamera().position);
+    C3D_FVUnifSet(GPU_VERTEX_SHADER, uPosition, position.x, position.y, position.z, 1.0f);
 
     // Bind the VBO
     C3D_SetBufInfo(&vbo);

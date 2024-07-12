@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 	C3D_BindProgram(&program);
 	int uViewProj = shaderInstanceGetUniformLocation(program.vertexShader, "viewProj");
 	int uPosition = shaderInstanceGetUniformLocation(program.vertexShader, "position");
+	int uBgColor = shaderInstanceGetUniformLocation(program.vertexShader, "bgColor");
 
 	// Vertex attributes
 	C3D_AttrInfo* attributeInfo = C3D_GetAttrInfo();
@@ -100,15 +101,15 @@ int main(int argc, char **argv) {
 	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/texture_atlas.t3x");
 	C3D_TexBind(0, texture);
 
-	// Environment
+	// TEV
 	C3D_TexEnv* env = C3D_GetTexEnv(0);
 	C3D_TexEnvInit(env);
-	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_FRAGMENT_PRIMARY_COLOR, (GPU_TEVSRC)0);
+	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, (GPU_TEVSRC)0);
 	C3D_TexEnvFunc(env, C3D_RGB, GPU_MODULATE);
-	//env = C3D_GetTexEnv(1);
-	//C3D_TexEnvInit(env);
-	//C3D_TexEnvSrc(env, C3D_Both, GPU_PREVIOUS, GPU_FRAGMENT_SECONDARY_COLOR, (GPU_TEVSRC)0);
-	//C3D_TexEnvFunc(env, C3D_RGB, GPU_ADD);
+	env = C3D_GetTexEnv(1);
+	C3D_TexEnvInit(env);
+	C3D_TexEnvSrc(env, C3D_Both, GPU_PRIMARY_COLOR, GPU_FRAGMENT_SECONDARY_COLOR, (GPU_TEVSRC)0);
+	C3D_TexEnvFunc(env, C3D_RGB, GPU_REPLACE);
 
 	// Light
 	C3D_LightEnv lightEnvironment;
@@ -129,10 +130,10 @@ int main(int argc, char **argv) {
 	C3D_LightPosition(&light, &lightVector);
 
 	// Fog
-	C3D_FogLut fogLut;
-	FogLut_Exp(&fogLut, 0.05f, 1.0f, 48.0f, 50.0f);
+	//C3D_FogLut fogLut;
+	//FogLut_Exp(&fogLut, -0.5f, 1.0f, NEAR_PLANE, FAR_PLANE);
 	//C3D_FogGasMode(GPU_FOG, GPU_PLAIN_DENSITY, false);
-	C3D_FogColor(BG_COLOR_REVERSED);
+	//C3D_FogColor(BG_COLOR_REVERSED);
 	//C3D_FogLutBind(&fogLut);
 
 	// Alpha test
@@ -204,9 +205,7 @@ int main(int argc, char **argv) {
 
             // View matrix
             C3D_Mtx view;
-            // HACK: divide the position by 2
-            C3D_FVec tempPos = vec3ScalarMultiply(camera.position, 0.5f);
-    		Mtx_LookAt(&view, tempPos, FVec3_Add(tempPos, camera.direction), camera.up, true);
+    		Mtx_LookAt(&view, C3D_FVec{.w = 0.0f, .z = 0.0f, .y = 0.0f, .x = 0.0f}, camera.direction, camera.up, true);
 
             C3D_Mtx viewProj;
             Mtx_Multiply(&viewProj, &projection, &view);
@@ -215,6 +214,7 @@ int main(int argc, char **argv) {
 
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);
+    		C3D_FVUnifSet(GPU_VERTEX_SHADER, uBgColor, 0x00 / 255.0f, 0x80 / 255.0f, 0xE0 / 255.0f, 1.0f);
 
             // Draw the world
             world.render();
