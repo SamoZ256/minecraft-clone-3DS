@@ -5,7 +5,7 @@
 #include "chunk.hpp"
 #include "camera.hpp"
 
-const s32 RENDER_DISTANCE = 4;
+const s32 RENDER_DISTANCE = 5;
 const s32 TRACK_DISTANCE = RENDER_DISTANCE + 2;
 const s32 TRACK_GRID_SIZE = TRACK_DISTANCE * 2 + 1;
 
