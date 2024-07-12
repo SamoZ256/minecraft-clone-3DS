@@ -34,14 +34,33 @@ class World;
 
 class Chunk {
 public:
-    Chunk(World& world_, int uPosition_, s32 x_, s32 z_);
+    Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {}
     ~Chunk() = default;
+
+    void generate();
 
     void render();
 
     void freeData();
 
+    bool didJustFinishGeneration() {
+        // Deallocate the thread if it's done
+        if (generationThread && generated) {
+            threadFree(generationThread);
+            generationThread = nullptr;
+
+            return true;
+        }
+
+        return false;
+    }
+
     Block getBlock(s32 blockX, s32 blockY, s32 blockZ) const {
+        // Wait for the chunk to generate
+        if (generationThread) {
+            threadJoin(generationThread, U64_MAX);
+        }
+
         return blocks[blockX][blockY][blockZ];
     }
 
@@ -65,6 +84,14 @@ public:
         return z;
     }
 
+    bool isGenerated() {
+        return generated;
+    }
+
+    void setGenerationThread(Thread thread) {
+        generationThread = thread;
+    }
+
 private:
     World& world;
     int uPosition;
@@ -72,9 +99,12 @@ private:
 
     Block blocks[CHUNK_WIDTH][CHUNK_HEIGHT][CHUNK_WIDTH];
 
+    bool generated = false;
     bool allocated = false;
     VboData vboData;
     C3D_BufInfo vbo;
+
+    Thread generationThread = nullptr;
 
     void allocate();
 };

@@ -50,6 +50,9 @@ private:
     std::vector<Chunk> chunks;
     Chunk* trackedChunks[TRACK_GRID_SIZE][TRACK_GRID_SIZE];
 
+    u32 activeThreads = 0;
+    std::vector<Chunk*> generationQueue;
+
     Chunk*& getTrackedChunk(s32 chunkRelX, s32 chunkRelZ) {
         // HACK: just in case
         if (chunkRelX > TRACK_DISTANCE || chunkRelX < -TRACK_DISTANCE || chunkRelZ > TRACK_DISTANCE || chunkRelZ < -TRACK_DISTANCE) {
@@ -60,4 +63,6 @@ private:
     }
 
     void findTrackedChunks();
+
+    void updateQueues();
 };

@@ -7,7 +7,11 @@
 
 const double NOISE_FREQ = 0.04;
 
-Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPosition{uPosition_}, x{x_}, z{z_} {
+void Chunk::generate() {
+    //if (generated) {
+    //    return;
+    //}
+
     for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
         for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
             const double terrainBias = 1.4; // The higher the value the more flat the terrain is
@@ -65,13 +69,8 @@ Chunk::Chunk(World& world_, int uPosition_, s32 x_, s32 z_) : world{world_}, uPo
             }
         }
     }
-}
 
-void Chunk::freeData() {
-    if (allocated) {
-        vboData.freeData();
-        allocated = false;
-    }
+    generated = true;
 }
 
 void Chunk::render() {
@@ -87,6 +86,13 @@ void Chunk::render() {
 
     // Draw
     C3D_DrawElements(GPU_TRIANGLES, vboData.indexCount, C3D_UNSIGNED_SHORT, vboData.indexData);
+}
+
+void Chunk::freeData() {
+    if (allocated) {
+        vboData.freeData();
+        allocated = false;
+    }
 }
 
 void Chunk::allocate() {
