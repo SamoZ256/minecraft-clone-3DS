@@ -16,6 +16,10 @@ enum class TextureType {
     WoodSide,
     WoodTop,
     Leaves,
+    Sand,
+    RedFlower,
+    YellowFlower,
+    Cactus,
 };
 
 const u16 textureAtlasWidth = 256;
@@ -32,6 +36,10 @@ enum class BlockType {
     Stone,
     Wood,
     Leaves,
+    Sand,
+    RedFlower,
+    YellowFlower,
+    Cactus,
 };
 
 struct Block {
