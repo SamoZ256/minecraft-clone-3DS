@@ -128,6 +128,13 @@ int main(int argc, char **argv) {
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
 	C3D_LightPosition(&light, &lightVector);
 
+	// Fog
+	C3D_FogLut fogLut;
+	FogLut_Exp(&fogLut, 0.05f, 1.0f, 48.0f, 50.0f);
+	//C3D_FogGasMode(GPU_FOG, GPU_PLAIN_DENSITY, false);
+	C3D_FogColor(BG_COLOR_REVERSED);
+	//C3D_FogLutBind(&fogLut);
+
 	// Alpha test
 	C3D_AlphaTest(true, GPU_GREATER, 0.5f);
 
