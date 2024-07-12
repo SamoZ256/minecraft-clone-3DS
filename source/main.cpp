@@ -50,10 +50,11 @@ const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
 const u32 BG_COLOR_WITH_ALPHA = 0x0080E0FF;
 const u32 BG_COLOR_REVERSED = 0xE08000;
 
-const float GRAVITY = -9.8f;
+const float GRAVITY = -15.0f;
 const float JUMP_SPEED = 8.0f;
 const float SPEED_IN_FLIGHT_MODE = 8.0f;
-const float SPEED = 4.0f;
+const float SPEED = 5.0f;
+const u8 MAX_JUMPS = 3;
 
 int main(int argc, char **argv) {
     // Initialization
@@ -154,6 +155,7 @@ int main(int argc, char **argv) {
 
 	bool flyMode = false;
 	float yMomentum = 0.0f;
+	u8 jumpCount = MAX_JUMPS;
 
 	// World
 	World world(camera, uPosition);
@@ -209,13 +211,20 @@ int main(int argc, char **argv) {
             yMomentum += GRAVITY * dt;
             yMomentum = std::min(yMomentum, 10.0f);
             bool isOnGround = false;
-            bool jump = false;
-            world.moveCamera(movement, isOnGround, jump);
+            bool wallJump = false;
+            world.moveCamera(movement, isOnGround, wallJump);
             if (isOnGround) {
                 yMomentum = 0.0f;
             }
-            if (jump) {
+            if (wallJump || isOnGround) {
+                jumpCount = MAX_JUMPS;
+            }
+            bool jump = (((hidKeysDown() & KEY_A) || (hidKeysDown() & KEY_B)) && jumpCount > 0);
+            if (jump || wallJump) {
                 yMomentum = JUMP_SPEED;
+                if (jump) {
+                    jumpCount--;
+                }
             }
         }
 

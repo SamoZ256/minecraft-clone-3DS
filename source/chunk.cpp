@@ -148,7 +148,7 @@ void Chunk::allocate() {
                         checkBlock = blocks[checkBlockX][checkBlockY][checkBlockZ];
                     }
 
-                    if (getBlockFlags(checkBlock.ty) & BlockFlags::Transparent) {
+                    if (getBlockFlags(checkBlock.ty) & BlockFlags::Transparent && block.ty != checkBlock.ty) {
                         for (u8 v = 0; v < 4; v++) {
                             Vertex vertex = cubeVertices[face][v];
                             vertex.position[0] += blockX;

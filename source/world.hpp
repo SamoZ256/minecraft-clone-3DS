@@ -16,7 +16,7 @@ public:
 
     void render();
 
-    void moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& jump);
+    void moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& wallJump);
 
     Block getBlock(s32 x, s32 y, s32 z) {
         if (y < 0 || y >= CHUNK_HEIGHT) {

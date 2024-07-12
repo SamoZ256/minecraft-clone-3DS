@@ -36,7 +36,7 @@ void World::render() {
     }
 }
 
-void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& jump) {
+void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& wallJump) {
     s8 signs[3];
     signs[0] = movement.x > 0.0f ? 1 : -1;
     signs[1] = movement.y > 0.0f ? 1 : -1;
@@ -68,7 +68,7 @@ void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& jump) {
                                 }
                                 if (axis == 0 || axis == 2) {
                                     //if (blockY >= CHUNK_HEIGHT || !(getBlockFlags(getBlock(blockX, blockY + 1, blockZ).ty) & BlockFlags::Solid)) {
-                                        jump = true;
+                                    wallJump = true;
                                     //}
                                 }
                                 //std::cout << "Collision at: " << blockAABB.position.x << ", " << blockAABB.position.y << ", " << blockAABB.position.z << std::endl;
