@@ -7,7 +7,7 @@ void generateChunk(void* chunk) {
     static_cast<Chunk*>(chunk)->generate();
 }
 
-World::World(const Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {
+World::World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {
     chunks.reserve((RENDER_DISTANCE * 2 + 1) * (RENDER_DISTANCE * 2 + 1));
 
     for (s32 z = -TRACK_DISTANCE; z <= TRACK_DISTANCE; z++) {
@@ -36,9 +36,55 @@ void World::render() {
     }
 }
 
+void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& jump) {
+    s8 signs[3];
+    signs[0] = movement.x > 0.0f ? 1 : -1;
+    signs[1] = movement.y > 0.0f ? 1 : -1;
+    signs[2] = movement.z > 0.0f ? 1 : -1;
+
+    s32 cameraBlockX = std::floor(camera.aabb.position.x);
+    s32 cameraBlockY = std::floor(camera.aabb.position.y);
+    s32 cameraBlockZ = std::floor(camera.aabb.position.z);
+
+    for (u8 axis = 0; axis < 3; axis++) {
+        u8 trueAxis = 3 - axis;
+        camera.aabb.position.c[trueAxis] += movement.c[trueAxis];
+        AABB blockAABB;
+        for (s32 x = -1; x <= 1; x++) {
+            for (s32 y = -2; y <= 2; y++) {
+                for (s32 z = -1; z <= 1; z++) {
+                    s32 blockX = cameraBlockX + x;
+                    s32 blockY = cameraBlockY + y;
+                    s32 blockZ = cameraBlockZ + z;
+                    if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
+                        Block block = getBlock(blockX, blockY, blockZ);
+                        if (getBlockFlags(block.ty) & BlockFlags::Solid) {
+                            blockAABB.position = C3D_FVec{.z = blockZ, .y = blockY, .x = blockX};
+                            //std::cout << "Block at: " << blockAABB.position.x << ", " << blockAABB.position.y << ", " << blockAABB.position.z << std::endl;
+                            if (camera.aabb.collidesWith(blockAABB)) {
+                                camera.aabb.position.c[trueAxis] = blockAABB.position.c[trueAxis] - blockAABB.scale.c[trueAxis] / 2.0f * signs[axis] - camera.aabb.scale.c[trueAxis] / 2.0f * signs[axis];
+                                if (axis == 1 && signs[axis] == -1) {
+                                    isOnGround = true;
+                                }
+                                if (axis == 0 || axis == 2) {
+                                    //if (blockY >= CHUNK_HEIGHT || !(getBlockFlags(getBlock(blockX, blockY + 1, blockZ).ty) & BlockFlags::Solid)) {
+                                        jump = true;
+                                    //}
+                                }
+                                //std::cout << "Collision at: " << blockAABB.position.x << ", " << blockAABB.position.y << ", " << blockAABB.position.z << std::endl;
+                                //std::cout << "(Relative) Collision at: " << nBlockX << ", " << nBlockY << ", " << nBlockZ << std::endl;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void World::findTrackedChunks() {
-    cameraChunkX = std::floor((float)camera.position.x / (float)CHUNK_WIDTH);
-    cameraChunkZ = std::floor((float)camera.position.z / (float)CHUNK_WIDTH);
+    cameraChunkX = std::floor((float)camera.aabb.position.x / (float)CHUNK_WIDTH);
+    cameraChunkZ = std::floor((float)camera.aabb.position.z / (float)CHUNK_WIDTH);
 
     for (u8 z = 0; z < TRACK_GRID_SIZE; z++) {
         for (u8 x = 0; x < TRACK_GRID_SIZE; x++) {

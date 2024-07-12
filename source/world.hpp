@@ -11,10 +11,12 @@ const s32 TRACK_GRID_SIZE = TRACK_DISTANCE * 2 + 1;
 
 class World {
 public:
-    World(const Camera& camera_, int uPosition_);
+    World(Camera& camera_, int uPosition_);
     ~World() = default;
 
     void render();
+
+    void moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& jump);
 
     Block getBlock(s32 x, s32 y, s32 z) {
         if (y < 0 || y >= CHUNK_HEIGHT) {
@@ -45,7 +47,7 @@ public:
     }
 
 private:
-    const Camera& camera;
+    Camera& camera;
     int uPosition;
 
     s32 cameraChunkX = 0;

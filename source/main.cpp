@@ -50,6 +50,11 @@ const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
 const u32 BG_COLOR_WITH_ALPHA = 0x0080E0FF;
 const u32 BG_COLOR_REVERSED = 0xE08000;
 
+const float GRAVITY = -9.8f;
+const float JUMP_SPEED = 8.0f;
+const float SPEED_IN_FLIGHT_MODE = 8.0f;
+const float SPEED = 4.0f;
+
 int main(int argc, char **argv) {
     // Initialization
     srvInit();
@@ -144,15 +149,16 @@ int main(int argc, char **argv) {
 
 	// Camera
 	Camera camera;
-	camera.position.y = CHUNK_HEIGHT + 2.0f;
+	camera.aabb.position.y = CHUNK_HEIGHT + 2.0f;
+	camera.aabb.scale = C3D_FVec{.z = 0.6f, .y = 1.8f, .x = 0.5f};
+
+	bool flyMode = false;
+	float yMomentum = 0.0f;
 
 	// World
 	World world(camera, uPosition);
 
 	touchPosition lastTouch{0, 0};
-
-	// HACK
-	float t = 0.0f;
 
 	// -------- Main loop --------
     while (aptMainLoop()) {
@@ -160,6 +166,24 @@ int main(int argc, char **argv) {
         gspWaitForVBlank();
         hidScanInput();
 
+        // Calculate delta time
+        // HACK
+        float dt = 1.0f / 30.0f;
+
+        // Rotate
+        touchPosition touch;
+        hidTouchRead(&touch);
+        // If held, but not pressed just this frame
+        if ((hidKeysHeld() & KEY_TOUCH) && !(hidKeysDown() & KEY_TOUCH)) {
+            float rotX = (touch.py - lastTouch.py) * 0.008f;
+            float rotY = (touch.px - lastTouch.px) * 0.008f;
+
+            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
+            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
+        }
+        lastTouch = touch;
+
+        // D-Pad
         C3D_FVec dpad{.y = 0.0f, .x = 0.0f};
         if (hidKeysHeld() & KEY_UP)
             dpad.y += 1.0f;
@@ -175,23 +199,25 @@ int main(int argc, char **argv) {
             dpad = FVec3_Normalize(dpad);
 
         // Move
-        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * 0.5f);
-                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * 0.5f));
-        //movement.y = 0.0f;
-        camera.position = FVec3_Add(camera.position, movement);
-
-        // Rotate
-        touchPosition touch;
-        hidTouchRead(&touch);
-        // If held, but not pressed just this frame
-        if ((hidKeysHeld() & KEY_TOUCH) && !(hidKeysDown() & KEY_TOUCH)) {
-            float rotX = (touch.py - lastTouch.py) * 0.008f;
-            float rotY = (touch.px - lastTouch.px) * 0.008f;
-
-            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
-            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
+        float speed = flyMode ? SPEED_IN_FLIGHT_MODE : SPEED;
+        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * dt * speed);
+                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * dt * speed));
+        if (flyMode) {
+            camera.aabb.position = FVec3_Add(camera.aabb.position, movement);
+        } else {
+            movement.y = yMomentum * dt;
+            yMomentum += GRAVITY * dt;
+            yMomentum = std::min(yMomentum, 10.0f);
+            bool isOnGround = false;
+            bool jump = false;
+            world.moveCamera(movement, isOnGround, jump);
+            if (isOnGround) {
+                yMomentum = 0.0f;
+            }
+            if (jump) {
+                yMomentum = JUMP_SPEED;
+            }
         }
-        lastTouch = touch;
 
         float slider = osGet3DSliderState();
     	float interOcularDistance = slider / 3.0f;
@@ -223,8 +249,6 @@ int main(int argc, char **argv) {
             world.render();
         }
         C3D_FrameEnd(0);
-
-        t += 0.05f;
 
         // Present
         //gfxFlushBuffers();
