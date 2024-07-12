@@ -96,6 +96,8 @@ void Chunk::freeData() {
 }
 
 void Chunk::allocate() {
+    joinGenerationThread();
+
     std::vector<Vertex> vertices;
     vertices.reserve(1024);
 

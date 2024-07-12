@@ -43,11 +43,15 @@ public:
 
     void freeData();
 
-    bool didJustFinishGeneration() {
+    bool generationThreadIsRunning() {
         // Deallocate the thread if it's done
-        if (generationThread && generated) {
-            threadFree(generationThread);
-            generationThread = nullptr;
+        if (generationThread) {
+            if (generated) {
+                //threadFree(generationThread);
+                generationThread = nullptr;
+
+                return false;
+            }
 
             return true;
         }
@@ -55,10 +59,18 @@ public:
         return false;
     }
 
-    Block getBlock(s32 blockX, s32 blockY, s32 blockZ) const {
-        // Wait for the chunk to generate
+    void joinGenerationThread() {
         if (generationThread) {
             threadJoin(generationThread, U64_MAX);
+            //threadFree(generationThread);
+            generationThread = nullptr;
+        }
+    }
+
+    Block getBlock(s32 blockX, s32 blockY, s32 blockZ) {
+        // Wait for the chunk to generate
+        if (generationThread) {
+            joinGenerationThread();
         }
 
         return blocks[blockX][blockY][blockZ];
@@ -82,10 +94,6 @@ public:
 
     s32 getZ() const {
         return z;
-    }
-
-    bool isGenerated() {
-        return generated;
     }
 
     void setGenerationThread(Thread thread) {
