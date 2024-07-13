@@ -70,6 +70,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Random seed
+    srand(time(NULL));
+
 	// -------- Graphics initialization --------
 
 	// Top render target

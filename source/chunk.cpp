@@ -4,8 +4,12 @@
 #include "db_perlin.hpp"
 
 #include "world.hpp"
+#include "biomes.hpp"
 
-const double NOISE_FREQ = 0.04;
+// Noise properties
+const double NOISE_FREQUENCY = 0.04;
+const double TEMPERATURE_FREQUENCY = 0.05;
+const double HUMIDITY_FREQUENCY = 0.05;
 
 void applyOffsetToTexCoord(TexCoord<float>& texCoord, BlockType ty, u8 face) {
     float offset = enumToInt(blockTextures[enumToInt(ty)][face]);
@@ -17,15 +21,25 @@ void Chunk::generate() {
     //    return;
     //}
 
-    for (s32 blockZ = 0; blockZ < CHUNK_WIDTH; blockZ++) {
-        for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
-            const double terrainBias = 1.4; // The higher the value the more flat the terrain is
-            const double terrainYOffset = 0.0; // Higher values will make the biome deeper, lower values will make it taller
+    for (s32 relZ = 0; relZ < CHUNK_WIDTH; relZ++) {
+        for (s32 relX = 0; relX < CHUNK_WIDTH; relX++) {
+            s32 blockX = x * CHUNK_WIDTH + relX;
+            s32 blockZ = z * CHUNK_WIDTH + relZ;
+
+            // TODO: check if this is correct
+            double temperature = db::perlin(blockX * TEMPERATURE_FREQUENCY, blockZ * TEMPERATURE_FREQUENCY, world.temperatureNoiseSeed);
+            double humidity = db::perlin(blockX * HUMIDITY_FREQUENCY, blockZ * HUMIDITY_FREQUENCY + 0.5, world.humidityNoiseSeed);
+            const Biome& biome = getBiome(temperature, humidity);
+
+            // Getting biome properties
+            double terrainBias;
+            double terrainYOffset;
+            getBiomeProperties(temperature, humidity, terrainBias, terrainYOffset);
 
             // Number of blocks in a row
             u8 groundBlockCount = 0;
             for (s32 blockY = CHUNK_HEIGHT - 1; blockY >= 0; blockY--) {
-                double noise = db::perlin((x * CHUNK_WIDTH + blockX) * NOISE_FREQ, blockY * NOISE_FREQ, (z * CHUNK_WIDTH + blockZ) * NOISE_FREQ);
+                double noise = db::perlin(blockX * NOISE_FREQUENCY, blockY * NOISE_FREQUENCY + world.noiseSeed, blockZ * NOISE_FREQUENCY);
 
                 // Exponential ease
                 double yNorm = (double)blockY / CHUNK_HEIGHT + terrainYOffset;
@@ -37,43 +51,45 @@ void Chunk::generate() {
                 if (noise < 0.0) {
                     groundBlockCount++;
 
-                    BlockType& blockTy = blocks[blockX][blockY][blockZ].ty;
+                    BlockType& blockTy = blocks[relX][blockY][relZ].ty;
                     if (groundBlockCount == 1) {
-                        blockTy = BlockType::Grass;
+                        blockTy = biome.surfaceBlockTy;
 
-                        // Generate a tree
-                        if (rand() % 128 == 0) {
+                        // Oak tree
+                        if (biome.decorations & DecorationFlags::Oak && rand() % biome.oakChance == 0) {
                             // Trunk
                             for (s32 i = 0; i < 4 + rand() % 3; i++) {
-                                setBlockTypeChecked(blockX, blockY + 1 + i, blockZ, {BlockType::Wood});
+                                setBlockTypeChecked(relX, blockY + 1 + i, relZ, {BlockType::Wood});
                             }
 
                             // Leaves
                             for (s32 i = 0; i < 3; i++) {
                                 for (s32 j = -1; j <= 1; j++) {
                                     for (s32 k = -1; k <= 1; k++) {
-                                        setBlockTypeChecked(blockX + j, blockY + 4 + i, blockZ + k, BlockType::Leaves);
+                                        setBlockTypeChecked(relX + j, blockY + 4 + i, relZ + k, BlockType::Leaves);
                                     }
                                 }
                             }
                         }
+                        // TODO: cherry blossom
                         // Yellow flower
-                        else if (rand() % 32 == 0) {
-                            setBlockTypeChecked(blockX, blockY + 1, blockZ, BlockType::YellowFlower);
+                        else if (biome.decorations & DecorationFlags::YellowFlower && rand() % biome.yellowFlowerChance == 0) {
+                            setBlockTypeChecked(relX, blockY + 1, relZ, BlockType::YellowFlower);
                         }
                         // Red flower
-                        else if (rand() % 256 == 0) {
-                            setBlockTypeChecked(blockX, blockY + 1, blockZ, BlockType::RedFlower);
+                        else if (biome.decorations & DecorationFlags::RedFlower && rand() % biome.redFlowerChance == 0) {
+                            setBlockTypeChecked(relX, blockY + 1, relZ, BlockType::RedFlower);
                         }
+                        // TODO: other decorations
                     } else if (groundBlockCount <= 2 + rand() % 3) {
-                        blockTy = BlockType::Dirt;
+                        blockTy = biome.closeToSurfaceBlocksTy;
                     } else {
                         blockTy = BlockType::Stone;
                     }
 
                     // HACK: for debugging
-                    if (blockX == 0 || blockX == CHUNK_WIDTH - 1 ||
-                        blockZ == 0 || blockZ == CHUNK_WIDTH - 1) {
+                    if (relX == 0 || relX == CHUNK_WIDTH - 1 ||
+                        relZ == 0 || relZ == CHUNK_WIDTH - 1) {
                         blockTy = BlockType::Stone;
                     }
                 } else {

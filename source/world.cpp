@@ -12,8 +12,11 @@ void generateChunk(void* chunk) {
 }
 
 World::World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {
-    chunks.reserve((RENDER_DISTANCE * 2 + 1) * (RENDER_DISTANCE * 2 + 1));
+    temperatureNoiseSeed = (rand() % 1000000) / 10000.0f;
+    humidityNoiseSeed = (rand() % 1000000) / 10000.0f;
+    noiseSeed = (rand() % 1000000) / 10000.0f;
 
+    chunks.reserve((RENDER_DISTANCE * 2 + 1) * (RENDER_DISTANCE * 2 + 1));
     for (s32 z = -TRACK_DISTANCE; z <= TRACK_DISTANCE; z++) {
         for (s32 x = -TRACK_DISTANCE; x <= TRACK_DISTANCE; x++) {
             chunks.emplace_back(*this, uPosition, x, z);

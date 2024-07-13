@@ -19,6 +19,10 @@ struct Intersection {
 
 class World {
 public:
+    double temperatureNoiseSeed;
+    double humidityNoiseSeed;
+    double noiseSeed;
+
     World(Camera& camera_, int uPosition_);
     ~World() = default;
 
