@@ -3,7 +3,7 @@
 #include "common.hpp"
 
 struct Plan {
-    C3D_FVec normal = {.z = 0.0f, .y = 1.0f, .x = 0.0f};
+    C3D_FVec normal = float3(0.0f, 1.0f, 0.0f);
     float distance = 0.0f;
 
     Plan() = default;

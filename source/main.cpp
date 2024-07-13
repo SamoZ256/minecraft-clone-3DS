@@ -17,10 +17,6 @@ const C3D_Material material = {
 	{ 0.0f, 0.0f, 0.0f }, // Emission
 };
 
-C3D_FVec vec3ScalarMultiply(C3D_FVec v, float s) {
-    return C3D_FVec{ .z = v.z * s, .y = v.y * s, .x = v.x * s };
-}
-
 // Function to load a T3X texture from a file
 C3D_Tex* loadT3XTexture(const char* filename) {
     // Load the T3X file into memory
@@ -132,7 +128,7 @@ int main(int argc, char **argv) {
 	C3D_LightEnvLut(&lightEnvironment, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &phongLut);
 
 	// Lighting properties
-	C3D_FVec lightVector = {{ .z = 0.5f, .y = 1.0f, .x = 0.25f }};
+	C3D_FVec lightVector = float3(0.25f, 1.0f, 0.5f);
 	C3D_Light light;
 	C3D_LightInit(&light, &lightEnvironment);
 	C3D_LightColor(&light, 1.0, 1.0, 1.0);
@@ -151,7 +147,7 @@ int main(int argc, char **argv) {
 	// Camera
 	Camera camera;
 	camera.aabb.position.y = CHUNK_HEIGHT + 2.0f;
-	camera.aabb.scale = C3D_FVec{.z = 0.6f, .y = 1.8f, .x = 0.5f};
+	camera.aabb.scale = float3(0.6f, 1.8f, 0.6f);
 
 	bool flyMode = false;
 	float yMomentum = 0.0f;
@@ -186,7 +182,7 @@ int main(int argc, char **argv) {
         lastTouch = touch;
 
         // D-Pad
-        C3D_FVec dpad{.y = 0.0f, .x = 0.0f};
+        C3D_FVec dpad = float3(0.0f);
         if (hidKeysHeld() & KEY_UP)
             dpad.y += 1.0f;
         if (hidKeysHeld() & KEY_DOWN)
@@ -202,10 +198,10 @@ int main(int argc, char **argv) {
 
         // Move
         float speed = flyMode ? SPEED_IN_FLIGHT_MODE : SPEED;
-        C3D_FVec movement =                     vec3ScalarMultiply(FVec3_Cross(camera.direction, camera.up), dpad.x * dt * speed);
-                 movement = FVec3_Add(movement, vec3ScalarMultiply(            camera.direction            , dpad.y * dt * speed));
+        C3D_FVec movement = FVec3_Cross(camera.direction, camera.up) * dpad.x * dt * speed;
+                 movement =  movement + camera.direction             * dpad.y * dt * speed;
         if (flyMode) {
-            camera.aabb.position = FVec3_Add(camera.aabb.position, movement);
+            camera.aabb.position = camera.aabb.position + movement;
         } else {
             movement.y = yMomentum * dt;
             yMomentum += GRAVITY * dt;
@@ -254,7 +250,7 @@ int main(int argc, char **argv) {
 
             // View matrix
             C3D_Mtx view;
-    		Mtx_LookAt(&view, C3D_FVec{.w = 0.0f, .z = 0.0f, .y = 0.0f, .x = 0.0f}, camera.direction, camera.up, true);
+    		Mtx_LookAt(&view, float3(0.0f), camera.direction, camera.up, true);
 
             C3D_Mtx viewProj;
             Mtx_Multiply(&viewProj, &projection, &view);

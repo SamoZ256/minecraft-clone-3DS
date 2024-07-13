@@ -5,8 +5,9 @@
 #include <vector>
 
 #include <3ds.h>
-#include <citro3d.h>
 #include <tex3ds.h>
+
+#include "math.hpp"
 
 template<typename T>
 struct TexCoord {

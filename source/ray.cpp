@@ -2,7 +2,7 @@
 
 float Ray::intersectsCube(C3D_FVec cubePos) {
     float tmin, tmax, tymin, tymax, tzmin, tzmax;
-    C3D_FVec invDir = C3D_FVec{ .z = 1.0f / direction.z, .y = 1.0f / direction.y, .x = 1.0f / direction.x };
+    C3D_FVec invDir = 1.0f / direction;
 
     int sign[3];
     sign[0] = (invDir.x < 0);
@@ -10,8 +10,8 @@ float Ray::intersectsCube(C3D_FVec cubePos) {
     sign[2] = (invDir.z < 0);
 
     C3D_FVec bounds[2];
-    bounds[0] = FVec3_Subtract(cubePos, C3D_FVec{ .z = 0.5f, .y = 0.5f, .x = 0.5f });
-    bounds[1] = FVec3_Add(cubePos, C3D_FVec{ .z = 0.5f, .y = 0.5f, .x = 0.5f });
+    bounds[0] = cubePos - float3(0.5f);
+    bounds[1] = cubePos + float3(0.5f);
 
     tmin = (bounds[sign[0]].x - origin.x) * invDir.x;
     tmax = (bounds[1 - sign[0]].x - origin.x) * invDir.x;

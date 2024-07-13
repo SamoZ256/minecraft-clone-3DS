@@ -63,7 +63,7 @@ void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& wallJum
                     if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
                         Block block = getBlock(blockX, blockY, blockZ);
                         if (getBlockFlags(block.ty) & BlockFlags::Solid) {
-                            blockAABB.position = C3D_FVec{.z = blockZ, .y = blockY, .x = blockX};
+                            blockAABB.position = float3(blockX, blockY, blockZ);
                             //std::cout << "Block at: " << blockAABB.position.x << ", " << blockAABB.position.y << ", " << blockAABB.position.z << std::endl;
                             if (camera.aabb.collidesWith(blockAABB)) {
                                 camera.aabb.position.c[trueAxis] = blockAABB.position.c[trueAxis] - blockAABB.scale.c[trueAxis] / 2.0f * signs[axis] - camera.aabb.scale.c[trueAxis] / 2.0f * signs[axis];
@@ -112,7 +112,7 @@ Intersection World::getIntersection() {
                 if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
                     Block block = getBlock(blockX, blockY, blockZ);
                     if (getBlockFlags(block.ty) & BlockFlags::Breakable) {
-                        float dist = ray.intersectsCube(C3D_FVec{ .z = blockZ, .y = blockY, .x = blockX });
+                        float dist = ray.intersectsCube(float3(blockX, blockY, blockZ));
                         if (dist > -1.0f && dist <= BLOCK_BREAK_DIST && dist < minDist) {
                             intersection.x = blockX;
                             intersection.y = blockY;
@@ -128,7 +128,7 @@ Intersection World::getIntersection() {
 
     if (intersection.found) {
         // Get new block coordinates
-        C3D_FVec diff = FVec3_Subtract(FVec3_Add(ray.origin, C3D_FVec{ .z = ray.direction.z * minDist, .y = ray.direction.y * minDist, .x = ray.direction.x * minDist }), C3D_FVec{ .z = intersection.z, .y = intersection.y, .x = intersection.x });
+        C3D_FVec diff = ray.origin + ray.direction * minDist - float3(intersection.x, intersection.y, intersection.z);
         //std::cout << diff.x << ", " << diff.y << ", " << diff.z << std::endl;
 
         float coordMax = fmax(fmax(abs(diff.x), abs(diff.y)), abs(diff.z));
