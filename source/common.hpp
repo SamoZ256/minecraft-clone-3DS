@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <3ds.h>
 #include <tex3ds.h>

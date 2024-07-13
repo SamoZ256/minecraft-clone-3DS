@@ -21,6 +21,8 @@ void Chunk::generate() {
     //    return;
     //}
 
+    // TODO: save the seed
+
     for (s32 relZ = 0; relZ < CHUNK_WIDTH; relZ++) {
         for (s32 relX = 0; relX < CHUNK_WIDTH; relX++) {
             s32 blockX = x * CHUNK_WIDTH + relX;
@@ -97,6 +99,10 @@ void Chunk::generate() {
                 }
             }
         }
+    }
+
+    for (const auto& modifiedBlock : world.getModifiedBlocksForChunk(x, z)) {
+        setBlockType(modifiedBlock.x, modifiedBlock.y, modifiedBlock.z, modifiedBlock.ty);
     }
 
     generated = true;

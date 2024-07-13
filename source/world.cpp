@@ -19,8 +19,9 @@ World::World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosi
     chunks.reserve((RENDER_DISTANCE * 2 + 1) * (RENDER_DISTANCE * 2 + 1));
     for (s32 z = -TRACK_DISTANCE; z <= TRACK_DISTANCE; z++) {
         for (s32 x = -TRACK_DISTANCE; x <= TRACK_DISTANCE; x++) {
-            chunks.emplace_back(*this, uPosition, x, z);
-            chunks.back().generate();
+            Chunk* chunk = new Chunk(*this, uPosition, x, z);
+            chunks.push_back(chunk);
+            chunk->generate();
         }
     }
 }
@@ -173,13 +174,19 @@ void World::findTrackedChunks() {
     }
 
     //activeThreads = 0;
-    for (auto& chunk : chunks) {
-        s32 chunkRelX = chunk.getX() - cameraChunkX;
-        s32 chunkRelZ = chunk.getZ() - cameraChunkZ;
+    for (u32 i = 0; i < chunks.size(); i++) {
+        Chunk*& chunk = chunks[i];
+        s32 chunkRelX = chunk->getX() - cameraChunkX;
+        s32 chunkRelZ = chunk->getZ() - cameraChunkZ;
         if (std::abs(chunkRelX) <= TRACK_DISTANCE && std::abs(chunkRelZ) <= TRACK_DISTANCE) {
-            getTrackedChunk(chunkRelX, chunkRelZ) = &chunk;
+            getTrackedChunk(chunkRelX, chunkRelZ) = chunk;
         } else {
-            chunk.freeData();
+            chunk->freeData();
+            if (std::abs(chunkRelX) > DEALLOCATE_DISTANCE && std::abs(chunkRelZ) > DEALLOCATE_DISTANCE) {
+                delete chunk;
+                chunk = nullptr;
+                freeChunkIndices.push_back(i);
+            }
         }
 
         // Check if the generation thread is still running
@@ -192,8 +199,14 @@ void World::findTrackedChunks() {
         for (s16 x = -TRACK_DISTANCE; x <= TRACK_DISTANCE; x++) {
             Chunk*& chunk = getTrackedChunk(x, z);
             if (!chunk) {
-                chunks.emplace_back(*this, uPosition, cameraChunkX + x, cameraChunkZ + z);
-                chunk = &chunks[chunks.size() - 1];
+                chunk = new Chunk(*this, uPosition, cameraChunkX + x, cameraChunkZ + z);
+                // Check if there are any free chunk slots
+                if (freeChunkIndices.size() != 0) {
+                    chunks[freeChunkIndices.back()] = chunk;
+                    freeChunkIndices.pop_back();
+                } else {
+                    chunks.push_back(chunk);
+                }
                 chunk->setGenerationThread(threadCreate(generateChunk, chunk, THREAD_STACK_SIZE, 0x18, -2, false));
                 //generationQueue.push_back(chunk);
             }
