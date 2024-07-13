@@ -29,7 +29,10 @@
 	; outview = -r0
 	mov outview, -r0
 
-	mov outpos, r0
+	mov r1, r0
+	mul r1.xy, scale.xx, r0.xy
+	add r1.xy, position.xy, r1.xy
+	mov outpos, r1
 
 	; outtex = inpos.yx * 0.5 + 0.5
 	mul r0.xy, half, inpos.xy

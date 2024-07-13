@@ -50,6 +50,11 @@ const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
 const u32 BG_COLOR_WITH_ALPHA = 0x0080E0FF;
 const u32 BG_COLOR_REVERSED = 0xE08000;
 
+// GUI
+const u8 GUI_TEXTURE_COUNT = 5;
+const float GUI_TEXTURE_SCALE = 0.8f;
+const float GUI_TEXTURE_SCALE_NORM = GUI_TEXTURE_SCALE / GUI_TEXTURE_COUNT;
+
 // Player
 const float GRAVITY = -15.0f;
 const float JUMP_SPEED = 8.0f;
@@ -363,11 +368,11 @@ int main(int argc, char **argv) {
             C3D_SetBufInfo(&guiVbo);
 
             // Set scale
-            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, 1.0f, 1.0f, 1.0f, 1.0f);
+            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, GUI_TEXTURE_SCALE_NORM, 1.0f, 1.0f, 1.0f);
 
-            for (u8 i = 0; i < 5; i++) {
+            for (u8 i = 0; i < GUI_TEXTURE_COUNT; i++) {
                 // Set position
-                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, 0.0f, 0.0f, 0.0f, 0.0f);
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, GUI_TEXTURE_SCALE_NORM * i + (1.0f - GUI_TEXTURE_SCALE) * 0.5f / GUI_TEXTURE_COUNT, 0.0f, 0.0f, 0.0f);
 
                 // Set texture offset
                 C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiTexOffset, (float)i * TEXTURE_SIZE_WITH_BORDER_NORM, 0.0f, 0.0f, 0.0f);
