@@ -53,6 +53,7 @@ enum class BlockFlags {
     None = 0x0,
     Solid = 0x1,
     Transparent = 0x2,
+    Breakable = 0x4,
 };
 
 inline BlockFlags operator|(BlockFlags a, BlockFlags b) {
@@ -69,11 +70,11 @@ inline BlockFlags operator~(BlockFlags a) {
 
 const BlockFlags blockFlags[] = {
     BlockFlags::Transparent,
-    BlockFlags::Solid,
-    BlockFlags::Solid,
-    BlockFlags::Solid,
-    BlockFlags::Solid,
-    BlockFlags::Solid | BlockFlags::Transparent,
+    BlockFlags::Solid | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
 };
 
 inline BlockFlags getBlockFlags(BlockType ty) {

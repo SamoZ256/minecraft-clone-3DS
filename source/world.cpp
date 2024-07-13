@@ -1,5 +1,9 @@
 #include "world.hpp"
 
+#include <limits>
+
+#include "ray.hpp"
+
 const u8 MAX_ACTIVE_THREADS = 4 - 1;
 const u16 THREAD_STACK_SIZE = 2 * 1024;
 
@@ -80,6 +84,84 @@ void World::moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& wallJum
             }
         }
     }
+}
+
+Intersection World::getIntersection() {
+    Ray ray(camera.getPosition(), camera.direction);
+    float minDist = std::numeric_limits<float>::max();
+
+    s8 signs[3];
+    signs[0] = camera.direction.x > 0.0f ? 1 : -1;
+    signs[1] = camera.direction.y > 0.0f ? 1 : -1;
+    signs[2] = camera.direction.z > 0.0f ? 1 : -1;
+
+    s32 cameraBlockX = std::floor(camera.aabb.position.x);
+    s32 cameraBlockY = std::floor(camera.aabb.position.y);
+    s32 cameraBlockZ = std::floor(camera.aabb.position.z);
+
+    Intersection intersection{};
+    for (s32 x = -1; x <= BLOCK_BREAK_DIST; x++) {
+        for (s32 y = -1; y <= BLOCK_BREAK_DIST; y++) {
+            for (s32 z = -1; z <= BLOCK_BREAK_DIST; z++) {
+                s32 relX = x * signs[0];
+                s32 relY = y * signs[1];
+                s32 relZ = z * signs[2];
+                s32 blockX = cameraBlockX + relX;
+                s32 blockY = cameraBlockY + relY;
+                s32 blockZ = cameraBlockZ + relZ;
+                if (blockY >= 0 && blockY < CHUNK_HEIGHT) {
+                    Block block = getBlock(blockX, blockY, blockZ);
+                    if (getBlockFlags(block.ty) & BlockFlags::Breakable) {
+                        float dist = ray.intersectsCube(C3D_FVec{ .z = blockZ, .y = blockY, .x = blockX });
+                        if (dist > -1.0f && dist <= BLOCK_BREAK_DIST && dist < minDist) {
+                            intersection.x = blockX;
+                            intersection.y = blockY;
+                            intersection.z = blockZ;
+                            intersection.found = true;
+                            minDist = dist;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (intersection.found) {
+        //int globalPlaceX = chunks[finalIndex].x * CHUNK_WIDTH + bX;
+        //int globalPlaceZ = chunks[finalIndex].z * CHUNK_WIDTH + bZ;
+
+        // Get new block coordinates
+        //C3D_FVec diff = rayOrigin + rayDirection * minDist - glm::vec3(globalPlaceX, bY, globalPlaceZ);
+        //std::cout << diff.x << ", " << diff.y << ", " << diff.z << std::endl;
+
+        //float coordMax = fmax(fmax(abs(diff.x), abs(diff.y)), abs(diff.z));
+        //placeNormal = {0, 0, 0};
+        //if (abs(diff.x) == coordMax) {
+        //    placeNormal[0] = diff.x > 0.0f ? 1 : -1;
+        //} else if (abs(diff.y) == coordMax) {
+        //    placeNormal.y = diff.y > 0.0f ? 1 : -1;
+        //} else if (abs(diff.z) == coordMax) {
+        //    placeNormal.z = diff.z > 0.0f ? 1 : -1;
+        //}
+    }
+
+    return intersection;
+}
+
+void World::breakBlock(const Intersection& intersection) {
+    setBlockType(intersection.x, intersection.y, intersection.z, BlockType::None);
+
+    // Update chunks
+    s32 relChunkX = std::floor((float)intersection.x / (float)CHUNK_WIDTH) - cameraChunkX;
+    s32 relChunkZ = std::floor((float)intersection.z / (float)CHUNK_WIDTH) - cameraChunkZ;
+
+    Chunk* chunk = getTrackedChunk(relChunkX, relChunkZ);
+    if (chunk) {
+        chunk->freeData();
+    }
+
+    // Update other chunks if on the edge of a chunk
+    // TODO
 }
 
 void World::findTrackedChunks() {

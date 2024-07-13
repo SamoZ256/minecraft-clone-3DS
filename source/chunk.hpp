@@ -76,15 +76,15 @@ public:
         return blocks[blockX][blockY][blockZ];
     }
 
-    void setBlock(s32 blockX, s32 blockY, s32 blockZ, Block block) {
-        blocks[blockX][blockY][blockZ] = block;
+    void setBlockType(s32 blockX, s32 blockY, s32 blockZ, BlockType ty) {
+        blocks[blockX][blockY][blockZ].ty = ty;
     }
 
-    void setBlockChecked(s32 blockX, s32 blockY, s32 blockZ, Block block) {
+    void setBlockTypeChecked(s32 blockX, s32 blockY, s32 blockZ, BlockType ty) {
         if (blockX >= 0 && blockX < CHUNK_WIDTH &&
             blockY >= 0 && blockY < CHUNK_HEIGHT &&
             blockZ >= 0 && blockZ < CHUNK_WIDTH) {
-            setBlock(blockX, blockY, blockZ, block);
+            setBlockType(blockX, blockY, blockZ, ty);
         }
     }
 

@@ -40,14 +40,14 @@ void Chunk::generate() {
                         if (rand() % 128 == 0) {
                             // Trunk
                             for (s32 i = 0; i < 4 + rand() % 3; i++) {
-                                setBlockChecked(blockX, blockY + 1 + i, blockZ, {BlockType::Wood});
+                                setBlockTypeChecked(blockX, blockY + 1 + i, blockZ, {BlockType::Wood});
                             }
 
                             // Leaves
                             for (s32 i = 0; i < 3; i++) {
                                 for (s32 j = -1; j <= 1; j++) {
                                     for (s32 k = -1; k <= 1; k++) {
-                                        setBlockChecked(blockX + j, blockY + 4 + i, blockZ + k, BlockType::Leaves);
+                                        setBlockTypeChecked(blockX + j, blockY + 4 + i, blockZ + k, BlockType::Leaves);
                                     }
                                 }
                             }

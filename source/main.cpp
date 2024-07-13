@@ -228,6 +228,13 @@ int main(int argc, char **argv) {
             }
         }
 
+        // Block breaking and placing
+        // TODO: use touch inputs instead
+        if (hidKeysHeld() & KEY_X) {
+            Intersection intersection = world.getIntersection();
+            world.breakBlock(intersection);
+        }
+
         float slider = osGet3DSliderState();
     	float interOcularDistance = slider / 3.0f;
 
