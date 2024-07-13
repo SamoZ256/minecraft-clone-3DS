@@ -1,3 +1,4 @@
+#include "block.hpp"
 #include "chunk.hpp"
 #include "world.hpp"
 
@@ -41,12 +42,15 @@ C3D_Tex* loadT3XTexture(const char* filename) {
     return texture;
 }
 
+// Perspective
 const float NEAR_PLANE = 0.001f;
 const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
 
+// Background color
 const u32 BG_COLOR_WITH_ALPHA = 0x0080E0FF;
 const u32 BG_COLOR_REVERSED = 0xE08000;
 
+// Player
 const float GRAVITY = -15.0f;
 const float JUMP_SPEED = 8.0f;
 const float SPEED_IN_FLIGHT_MODE = 8.0f;
@@ -95,7 +99,7 @@ int main(int argc, char **argv) {
 	C3D_RenderTargetSetOutput(topRenderTarget, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
 	// Bottom render target
-	C3D_RenderTarget* bottomRenderTarget = C3D_RenderTargetCreate(240, 320, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
+	C3D_RenderTarget* bottomRenderTarget = C3D_RenderTargetCreate(240, 320, GPU_RB_RGBA8, GPU_RB_DEPTH16);
 	C3D_RenderTargetSetOutput(bottomRenderTarget, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
 	// Shader
@@ -115,6 +119,7 @@ int main(int argc, char **argv) {
 
 	int uGuiPosition = shaderInstanceGetUniformLocation(guiProgram.vertexShader, "position");
 	int uGuiScale = shaderInstanceGetUniformLocation(guiProgram.vertexShader, "scale");
+	int uGuiTexOffset = shaderInstanceGetUniformLocation(guiProgram.vertexShader, "texOffset");
 
 	// Vertex attributes
 	C3D_AttrInfo mainAttrInfo;
@@ -139,17 +144,29 @@ int main(int argc, char **argv) {
 	C3D_TexBind(0, texture);
 
 	// TEV
-	C3D_TexEnv* env = C3D_GetTexEnv(0);
-	C3D_TexEnvInit(env);
-	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_FRAGMENT_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-	C3D_TexEnvFunc(env, C3D_RGB, GPU_MODULATE);
-	env = C3D_GetTexEnv(1);
-	C3D_TexEnvInit(env);
-	C3D_TexEnvSrc(env, C3D_RGB, GPU_CONSTANT, GPU_PREVIOUS, GPU_PRIMARY_COLOR);
-	C3D_TexEnvFunc(env, C3D_RGB, GPU_INTERPOLATE);
-	C3D_TexEnvSrc(env, C3D_Alpha, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-	C3D_TexEnvFunc(env, C3D_Alpha, GPU_REPLACE);
-	C3D_TexEnvColor(env, BG_COLOR_REVERSED);
+
+	// Main
+	C3D_TexEnv mainEnv0;
+	C3D_TexEnvInit(&mainEnv0);
+	C3D_TexEnvSrc(&mainEnv0, C3D_Both, GPU_TEXTURE0, GPU_FRAGMENT_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+	C3D_TexEnvFunc(&mainEnv0, C3D_RGB, GPU_MODULATE);
+
+	C3D_TexEnv mainEnv1;
+	C3D_TexEnvInit(&mainEnv1);
+	C3D_TexEnvSrc(&mainEnv1, C3D_RGB, GPU_CONSTANT, GPU_PREVIOUS, GPU_PRIMARY_COLOR);
+	C3D_TexEnvFunc(&mainEnv1, C3D_RGB, GPU_INTERPOLATE);
+	C3D_TexEnvSrc(&mainEnv1, C3D_Alpha, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+	C3D_TexEnvFunc(&mainEnv1, C3D_Alpha, GPU_REPLACE);
+	C3D_TexEnvColor(&mainEnv1, BG_COLOR_REVERSED);
+
+	// GUI
+	C3D_TexEnv guiEnv0;
+	C3D_TexEnvInit(&guiEnv0);
+	C3D_TexEnvSrc(&guiEnv0, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+	C3D_TexEnvFunc(&guiEnv0, C3D_RGB, GPU_REPLACE);
+
+	C3D_TexEnv guiEnv1;
+	C3D_TexEnvInit(&guiEnv1);
 
 	// Light
 	C3D_LightEnv lightEnvironment;
@@ -175,9 +192,6 @@ int main(int argc, char **argv) {
 	//C3D_FogGasMode(GPU_FOG, GPU_PLAIN_DENSITY, false);
 	//C3D_FogColor(BG_COLOR_REVERSED);
 	//C3D_FogLutBind(&fogLut);
-
-	// Alpha test
-	C3D_AlphaTest(true, GPU_GREATER, 0.5f);
 
 	// Camera
 	Camera camera;
@@ -309,6 +323,16 @@ int main(int argc, char **argv) {
             // Bind attribute info
             C3D_SetAttrInfo(&mainAttrInfo);
 
+            // Bind TEV
+            C3D_SetTexEnv(0, &mainEnv0);
+            C3D_SetTexEnv(1, &mainEnv1);
+
+            // Depth test
+            C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL);
+
+           	// Alpha test
+           	C3D_AlphaTest(true, GPU_GREATER, 0.5f);
+
     		// Update uniforms
     		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uMainViewProj, &viewProj);
 
@@ -325,15 +349,28 @@ int main(int argc, char **argv) {
             // Bind attribute info
             C3D_SetAttrInfo(&guiAttrInfo);
 
+            // Bind TEV
+            C3D_SetTexEnv(0, &guiEnv0);
+            C3D_SetTexEnv(1, &guiEnv1);
+
+            // Depth test
+            C3D_DepthTest(false, GPU_ALWAYS, GPU_WRITE_COLOR);
+
+           	// Alpha test
+           	C3D_AlphaTest(false, GPU_ALWAYS, 0.0f);
+
             // Bind VBO
             C3D_SetBufInfo(&guiVbo);
 
             // Set scale
-            C3D_FVUnifSet(GPU_GEOMETRY_SHADER, uGuiScale, 1.0f, 1.0f, 1.0f, 1.0f);
+            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, 1.0f, 1.0f, 1.0f, 1.0f);
 
             for (u8 i = 0; i < 5; i++) {
                 // Set position
-                C3D_FVUnifSet(GPU_GEOMETRY_SHADER, uGuiPosition, 0.0f, 0.0f, 0.0f, 0.0f);
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, 0.0f, 0.0f, 0.0f, 0.0f);
+
+                // Set texture offset
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiTexOffset, (float)i * TEXTURE_SIZE_WITH_BORDER_NORM, 0.0f, 0.0f, 0.0f);
 
                 // Draw
                 C3D_DrawArrays(GPU_TRIANGLE_STRIP, 0, 4);

@@ -1,13 +1,13 @@
 ; GUI vertex shader
 
 ; Uniforms
-.fvec position, scale
+.fvec position, scale, texOffset
 
 ; Constants
-.constf const1(0.0, 1.0, -1.0, 0.5)
-.alias  zeros const1.xxxx ; Vector full of zeros
-.alias  ones  const1.yyyy ; Vector full of ones
-.alias  minusOnes const1.zzzz ; Vector full of -1.0
+.constf const1(0.0, 1.0, 0.0625, 0.5)
+.alias  zeros const1.xxxx
+.alias  ones  const1.yyyy
+.alias  textureSizeNorm const1.zzzz
 .alias  half  const1.wwww
 
 ; Outputs
@@ -22,19 +22,20 @@
 
 .proc main
 	mov r0.xy, inpos
+	; HACK: for some reason, this needs to be -half instead of half
 	mov r0.z,  zeros
 	mov r0.w,  ones
 
 	; outview = -r0
 	mov outview, -r0
 
-	mul r1.xy, scale.xy, r0.xy
-	add r1.xy, position.xy, r1.xy
-	mov outpos, r1
+	mov outpos, r0
 
 	; outtex = inpos.yx * 0.5 + 0.5
-	mul r0.xy, half, inpos.yx
+	mul r0.xy, half, inpos.xy
 	add r0.xy, half, r0.xy
+	mul r0.y, textureSizeNorm.x, r0.y
+	add r0.y, texOffset.x, r0.y
 	mov outtc0, r0
 
 	; Degenerate values

@@ -5,9 +5,9 @@
 
 ; Constants
 .constf const1(0.0, 1.0, -1.0, 0.5)
-.alias  zeros const1.xxxx ; Vector full of zeros
-.alias  ones  const1.yyyy ; Vector full of ones
-.alias  minusOnes const1.zzzz ; Vector full of -1.0
+.alias  zeros const1.xxxx
+.alias  ones  const1.yyyy
+.alias  minusOnes const1.zzzz
 .alias  half  const1.wwww
 .constf const2(0.05, 0.0, -64.0, 0.25)
 .alias  smallnumber const2.xxxx
