@@ -1,4 +1,4 @@
-; Example PICA200 vertex shader
+; Main vertex shader
 
 ; Uniforms
 .fvec viewProj[4], position
@@ -89,6 +89,5 @@
 degenerate:
 	mov outnq, r0
 
-	; We're finished
 	end
 .end

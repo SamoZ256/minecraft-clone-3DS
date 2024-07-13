@@ -2,7 +2,8 @@
 #include "world.hpp"
 
 // Shader includes
-#include "vshader_shbin.h"
+#include "main_vertex_shbin.h"
+#include "gui_vertex_shbin.h"
 
 const u32 DISPLAY_TRANSFER_FLAGS = \
 		(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(0) | GX_TRANSFER_RAW_COPY(0) | \
@@ -52,6 +53,20 @@ const float SPEED_IN_FLIGHT_MODE = 8.0f;
 const float SPEED = 5.0f;
 const u8 MAX_JUMPS = 3;
 
+// Timers
+const float CLICK_TIME = 0.1f;
+
+struct GuiVertex {
+    float position[2];
+};
+
+const GuiVertex guiVertices[] = {
+    { { -1.0f, -1.0f } },
+    { {  1.0f, -1.0f } },
+    { { -1.0f,  1.0f } },
+    { {  1.0f,  1.0f } },
+};
+
 int main(int argc, char **argv) {
     // Initialization
     srvInit();
@@ -62,7 +77,7 @@ int main(int argc, char **argv) {
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
     // Init console for debugging
-    consoleInit(GFX_BOTTOM, NULL);
+    //consoleInit(GFX_BOTTOM, NULL);
 
     Result res = romfsInit();
     if (res != 0) {
@@ -84,23 +99,40 @@ int main(int argc, char **argv) {
 	C3D_RenderTargetSetOutput(bottomRenderTarget, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
 	// Shader
-	DVLB_s* vertexShader_dvlb = DVLB_ParseFile((u32*)vshader_shbin, vshader_shbin_size);
-	shaderProgram_s program;
-	shaderProgramInit(&program);
-	shaderProgramSetVsh(&program, &vertexShader_dvlb->DVLE[0]);
+	DVLB_s* mainVertexShaderDvlb = DVLB_ParseFile((u32*)main_vertex_shbin, main_vertex_shbin_size);
+	shaderProgram_s mainProgram;
+	shaderProgramInit(&mainProgram);
+	shaderProgramSetVsh(&mainProgram, &mainVertexShaderDvlb->DVLE[0]);
+
+	DVLB_s* guiVertexShaderDvlb = DVLB_ParseFile((u32*)gui_vertex_shbin, gui_vertex_shbin_size);
+	shaderProgram_s guiProgram;
+	shaderProgramInit(&guiProgram);
+	shaderProgramSetVsh(&guiProgram, &guiVertexShaderDvlb->DVLE[0]);
 
 	// Uniforms
-	C3D_BindProgram(&program);
-	int uViewProj = shaderInstanceGetUniformLocation(program.vertexShader, "viewProj");
-	int uPosition = shaderInstanceGetUniformLocation(program.vertexShader, "position");
-	int uBgColor = shaderInstanceGetUniformLocation(program.vertexShader, "bgColor");
+	int uMainViewProj = shaderInstanceGetUniformLocation(mainProgram.vertexShader, "viewProj");
+	int uMainPosition = shaderInstanceGetUniformLocation(mainProgram.vertexShader, "position");
+
+	int uGuiPosition = shaderInstanceGetUniformLocation(guiProgram.vertexShader, "position");
+	int uGuiScale = shaderInstanceGetUniformLocation(guiProgram.vertexShader, "scale");
 
 	// Vertex attributes
-	C3D_AttrInfo* attributeInfo = C3D_GetAttrInfo();
-	AttrInfo_Init(attributeInfo);
-	AttrInfo_AddLoader(attributeInfo, 0, GPU_FLOAT, 3); // Position
-	AttrInfo_AddLoader(attributeInfo, 1, GPU_FLOAT, 2); // Texture coordinate
-	AttrInfo_AddLoader(attributeInfo, 2, GPU_FLOAT, 3); // Normal
+	C3D_AttrInfo mainAttrInfo;
+	AttrInfo_Init(&mainAttrInfo);
+	AttrInfo_AddLoader(&mainAttrInfo, 0, GPU_FLOAT, 3); // Position
+	AttrInfo_AddLoader(&mainAttrInfo, 1, GPU_FLOAT, 2); // Texture coordinate
+	AttrInfo_AddLoader(&mainAttrInfo, 2, GPU_FLOAT, 3); // Normal
+
+	C3D_AttrInfo guiAttrInfo;
+	AttrInfo_Init(&guiAttrInfo);
+	AttrInfo_AddLoader(&guiAttrInfo, 0, GPU_FLOAT, 2); // Position
+
+	// Vertex buffers
+	void* guiVboData = linearAlloc(sizeof(guiVertices));
+	memcpy(guiVboData, guiVertices, sizeof(guiVertices));
+	C3D_BufInfo guiVbo;
+	BufInfo_Init(&guiVbo);
+	BufInfo_Add(&guiVbo, guiVboData, sizeof(GuiVertex), 1, 0x0);
 
 	// Load texture
 	C3D_Tex* texture = loadT3XTexture("romfs:/gfx/texture_atlas.t3x");
@@ -157,9 +189,12 @@ int main(int argc, char **argv) {
 	u8 jumpCount = MAX_JUMPS;
 
 	// World
-	World world(camera, uPosition);
+	World world(camera, uMainPosition);
 
 	touchPosition lastTouch{0, 0};
+
+	// Timers
+	float clickTimer = 0.0f;
 
 	// -------- Main loop --------
     while (aptMainLoop()) {
@@ -171,11 +206,21 @@ int main(int argc, char **argv) {
         // HACK
         float dt = 1.0f / 30.0f;
 
+        // Timers
+        if (clickTimer != 0.0f) {
+            clickTimer = std::max(clickTimer - dt, 0.0f);
+        }
+
+        // Click
+        if (hidKeysDown() & KEY_TOUCH) {
+            clickTimer = CLICK_TIME;
+        }
+
         // Rotate
         touchPosition touch;
         hidTouchRead(&touch);
         // If held, but not pressed just this frame
-        if ((hidKeysHeld() & KEY_TOUCH) && !(hidKeysDown() & KEY_TOUCH)) {
+        if (hidKeysHeld() & KEY_TOUCH && clickTimer == 0.0f) {
             float rotX = (touch.py - lastTouch.py) * 0.008f;
             float rotY = (touch.px - lastTouch.px) * 0.008f;
 
@@ -228,7 +273,6 @@ int main(int argc, char **argv) {
         }
 
         // Block breaking and placing
-        // TODO: use touch inputs instead
         if ((hidKeysDown() & KEY_X) || (hidKeysDown() & KEY_Y)) {
             Intersection intersection = world.getIntersection();
             if (hidKeysDown() & KEY_X) {
@@ -244,6 +288,7 @@ int main(int argc, char **argv) {
         // Render
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         {
+            // -------- Top screen --------
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, BG_COLOR_WITH_ALPHA, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
@@ -258,14 +303,41 @@ int main(int argc, char **argv) {
             C3D_Mtx viewProj;
             Mtx_Multiply(&viewProj, &projection, &view);
 
-            //std::cout << camera.position.x << " " << camera.position.z << std::endl;
+            // Bind shader program
+            C3D_BindProgram(&mainProgram);
+
+            // Bind attribute info
+            C3D_SetAttrInfo(&mainAttrInfo);
 
     		// Update uniforms
-    		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uViewProj, &viewProj);
-    		C3D_FVUnifSet(GPU_VERTEX_SHADER, uBgColor, 0x00 / 255.0f, 0x80 / 255.0f, 0xE0 / 255.0f, 1.0f);
+    		C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uMainViewProj, &viewProj);
 
             // Draw the world
             world.render();
+
+            // -------- Bottom screen --------
+            C3D_RenderTargetClear(bottomRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
+           	C3D_FrameDrawOn(bottomRenderTarget);
+
+            // Bind shader program
+            C3D_BindProgram(&guiProgram);
+
+            // Bind attribute info
+            C3D_SetAttrInfo(&guiAttrInfo);
+
+            // Bind VBO
+            C3D_SetBufInfo(&guiVbo);
+
+            // Set scale
+            C3D_FVUnifSet(GPU_GEOMETRY_SHADER, uGuiScale, 1.0f, 1.0f, 1.0f, 1.0f);
+
+            for (u8 i = 0; i < 5; i++) {
+                // Set position
+                C3D_FVUnifSet(GPU_GEOMETRY_SHADER, uGuiPosition, 0.0f, 0.0f, 0.0f, 0.0f);
+
+                // Draw
+                C3D_DrawArrays(GPU_TRIANGLE_STRIP, 0, 4);
+            }
         }
         C3D_FrameEnd(0);
 
@@ -275,8 +347,8 @@ int main(int argc, char **argv) {
     }
 
     // Graphics deinitialization
-    shaderProgramFree(&program);
-	DVLB_Free(vertexShader_dvlb);
+    shaderProgramFree(&mainProgram);
+	DVLB_Free(mainVertexShaderDvlb);
 
 	// Deinitialization
     gfxExit();
