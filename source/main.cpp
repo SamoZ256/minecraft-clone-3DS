@@ -230,9 +230,13 @@ int main(int argc, char **argv) {
 
         // Block breaking and placing
         // TODO: use touch inputs instead
-        if (hidKeysHeld() & KEY_X) {
+        if ((hidKeysDown() & KEY_X) || (hidKeysDown() & KEY_Y)) {
             Intersection intersection = world.getIntersection();
-            world.breakBlock(intersection);
+            if (hidKeysDown() & KEY_X) {
+                world.breakBlock(intersection);
+            } else {
+                world.placeBlock(intersection, BlockType::Dirt);
+            }
         }
 
         float slider = osGet3DSliderState();

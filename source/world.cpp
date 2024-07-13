@@ -127,22 +127,18 @@ Intersection World::getIntersection() {
     }
 
     if (intersection.found) {
-        //int globalPlaceX = chunks[finalIndex].x * CHUNK_WIDTH + bX;
-        //int globalPlaceZ = chunks[finalIndex].z * CHUNK_WIDTH + bZ;
-
         // Get new block coordinates
-        //C3D_FVec diff = rayOrigin + rayDirection * minDist - glm::vec3(globalPlaceX, bY, globalPlaceZ);
+        C3D_FVec diff = FVec3_Subtract(FVec3_Add(ray.origin, C3D_FVec{ .z = ray.direction.z * minDist, .y = ray.direction.y * minDist, .x = ray.direction.x * minDist }), C3D_FVec{ .z = intersection.z, .y = intersection.y, .x = intersection.x });
         //std::cout << diff.x << ", " << diff.y << ", " << diff.z << std::endl;
 
-        //float coordMax = fmax(fmax(abs(diff.x), abs(diff.y)), abs(diff.z));
-        //placeNormal = {0, 0, 0};
-        //if (abs(diff.x) == coordMax) {
-        //    placeNormal[0] = diff.x > 0.0f ? 1 : -1;
-        //} else if (abs(diff.y) == coordMax) {
-        //    placeNormal.y = diff.y > 0.0f ? 1 : -1;
-        //} else if (abs(diff.z) == coordMax) {
-        //    placeNormal.z = diff.z > 0.0f ? 1 : -1;
-        //}
+        float coordMax = fmax(fmax(abs(diff.x), abs(diff.y)), abs(diff.z));
+        if (abs(diff.x) == coordMax) {
+            intersection.placeNormal[0] = diff.x > 0.0f ? 1 : -1;
+        } else if (abs(diff.y) == coordMax) {
+            intersection.placeNormal[1] = diff.y > 0.0f ? 1 : -1;
+        } else if (abs(diff.z) == coordMax) {
+            intersection.placeNormal[2] = diff.z > 0.0f ? 1 : -1;
+        }
     }
 
     return intersection;
@@ -151,17 +147,16 @@ Intersection World::getIntersection() {
 void World::breakBlock(const Intersection& intersection) {
     setBlockType(intersection.x, intersection.y, intersection.z, BlockType::None);
 
-    // Update chunks
-    s32 relChunkX = std::floor((float)intersection.x / (float)CHUNK_WIDTH) - cameraChunkX;
-    s32 relChunkZ = std::floor((float)intersection.z / (float)CHUNK_WIDTH) - cameraChunkZ;
+    updateChunksAfterBlockChange(intersection.x, intersection.y, intersection.z, false);
+}
 
-    Chunk* chunk = getTrackedChunk(relChunkX, relChunkZ);
-    if (chunk) {
-        chunk->freeData();
-    }
+void World::placeBlock(const Intersection& intersection, BlockType ty) {
+    s32 x = intersection.x + intersection.placeNormal[0];
+    s32 y = intersection.y + intersection.placeNormal[1];
+    s32 z = intersection.z + intersection.placeNormal[2];
+    setBlockType(x, y, z, ty);
 
-    // Update other chunks if on the edge of a chunk
-    // TODO
+    updateChunksAfterBlockChange(x, y, z, true);
 }
 
 void World::findTrackedChunks() {
@@ -216,3 +211,60 @@ void World::findTrackedChunks() {
 //        activeThreads++;
 //    }
 //}
+
+void World::updateChunksAfterBlockChange(s32 x, s32 y, s32 z, bool isPlace) {
+    // Update chunks
+    s32 chunkX = std::floor((float)x / (float)CHUNK_WIDTH);
+    s32 chunkZ = std::floor((float)z / (float)CHUNK_WIDTH);
+    s32 relChunkX = chunkX - cameraChunkX;
+    s32 relChunkZ = chunkZ - cameraChunkZ;
+
+    Chunk* chunk = getTrackedChunk(relChunkX, relChunkZ);
+    if (chunk) {
+        chunk->freeData();
+    }
+
+    // TODO: clean this up
+    // Update other chunks if on the edge of a chunk
+    s32 relX = x - chunkX * CHUNK_WIDTH;
+    s32 relZ = z - chunkZ * CHUNK_WIDTH;
+
+#define SHOULD_UPDATE_CHUNK (!isPlace && (block.ty != BlockType::None || getBlockFlags(chunk->getBlock(relX, y, relZ).ty) & BlockFlags::Transparent))
+
+    if (relX == 0) {
+        Chunk* checkChunk = getTrackedChunk(relChunkX - 1, relChunkZ);
+        if (checkChunk) {
+            Block block = checkChunk->getBlock(CHUNK_WIDTH - 1, y, relZ);
+            if (SHOULD_UPDATE_CHUNK) {
+                checkChunk->freeData();
+            }
+        }
+    } else if (relX == CHUNK_WIDTH - 1) {
+        Chunk* checkChunk = getTrackedChunk(relChunkX + 1, relChunkZ);
+        if (checkChunk) {
+            Block block = checkChunk->getBlock(0, y, relZ);
+            if (SHOULD_UPDATE_CHUNK) {
+                checkChunk->freeData();
+            }
+        }
+    }
+    if (relZ == 0) {
+        Chunk* checkChunk = getTrackedChunk(relChunkX, relChunkZ - 1);
+        if (checkChunk) {
+            Block block = checkChunk->getBlock(CHUNK_WIDTH - 1, y, relZ);
+            if (SHOULD_UPDATE_CHUNK) {
+                checkChunk->freeData();
+            }
+        }
+    } else if (relZ == CHUNK_WIDTH - 1) {
+        Chunk* checkChunk = getTrackedChunk(relChunkX, relChunkZ + 1);
+        if (checkChunk) {
+            Block block = checkChunk->getBlock(CHUNK_WIDTH - 1, y, relZ);
+            if (SHOULD_UPDATE_CHUNK) {
+                checkChunk->freeData();
+            }
+        }
+    }
+
+#undef SHOULD_UPDATE_CHUNK
+}

@@ -30,10 +30,9 @@ public:
 
     void breakBlock(const Intersection& intersection);
 
-    // TODO: implement this
     void placeBlock(const Intersection& intersection, BlockType ty);
 
-    // TODO: make these 2 functions shere the code
+    // TODO: make these 2 functions share the code
     Block getBlock(s32 x, s32 y, s32 z) {
         if (y < 0 || y >= CHUNK_HEIGHT) {
             return Block(BlockType::None);
@@ -105,4 +104,6 @@ private:
     void findTrackedChunks();
 
     //void updateQueues();
+
+    void updateChunksAfterBlockChange(s32 x, s32 y, s32 z, bool isPlace);
 };
