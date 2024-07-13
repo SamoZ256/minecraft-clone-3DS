@@ -7,6 +7,11 @@
 
 const double NOISE_FREQ = 0.04;
 
+void applyOffsetToTexCoord(TexCoord<float>& texCoord, BlockType ty, u8 face) {
+    float offset = enumToInt(blockTextures[enumToInt(ty)][face]);
+    texCoord.u = offset * TEXTURE_SIZE_WITH_BORDER_NORM + texCoord.u * TEXTURE_SIZE_NORM;
+}
+
 void Chunk::generate() {
     //if (generated) {
     //    return;
@@ -51,6 +56,14 @@ void Chunk::generate() {
                                     }
                                 }
                             }
+                        }
+                        // Yellow flower
+                        else if (rand() % 32 == 0) {
+                            setBlockTypeChecked(blockX, blockY + 1, blockZ, BlockType::YellowFlower);
+                        }
+                        // Red flower
+                        else if (rand() % 256 == 0) {
+                            setBlockTypeChecked(blockX, blockY + 1, blockZ, BlockType::RedFlower);
                         }
                     } else if (groundBlockCount <= 2 + rand() % 3) {
                         blockTy = BlockType::Dirt;
@@ -112,49 +125,16 @@ void Chunk::allocate() {
             for (s32 blockX = 0; blockX < CHUNK_WIDTH; blockX++) {
                 Block block = blocks[blockX][blockY][blockZ];
                 if (block.ty == BlockType::None) continue;
-                for (u8 face = 0; face < 6; face++) {
-                    float texCoordOffset = enumToInt(blockTextures[enumToInt(block.ty)][face]);
 
-                    s32 checkBlockX = blockX;
-                    s32 checkBlockY = blockY;
-                    s32 checkBlockZ = blockZ;
-                    switch (face) {
-                    case 0: checkBlockZ++; break;
-                    case 1: checkBlockZ--; break;
-                    case 2: checkBlockX++; break;
-                    case 3: checkBlockX--; break;
-                    case 4: checkBlockY++; break;
-                    case 5: checkBlockY--; break;
-                    }
-
-                    Block checkBlock;
-                    // If the check block is outside of the chunk, check for the block globally
-                    if (checkBlockX < 0 || checkBlockX >= CHUNK_WIDTH ||
-                        checkBlockY < 0 || checkBlockY >= CHUNK_HEIGHT ||
-                        checkBlockZ < 0 || checkBlockZ >= CHUNK_WIDTH) {
-                        checkBlock = world.getBlock(x * CHUNK_WIDTH + checkBlockX, checkBlockY, z * CHUNK_WIDTH + checkBlockZ);
-                    }
-                    /*if (checkBlockX < 0) {
-                        checkBlock = world.getTrackedChunk(x - 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(CHUNK_WIDTH - 1, checkBlockY, checkBlockZ);
-                    } else if (checkBlockX >= CHUNK_WIDTH) {
-                        checkBlock = world.getTrackedChunk(x + 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(0, checkBlockY, checkBlockZ);
-                    } else if (checkBlockZ < 0) {
-                        checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z - 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, CHUNK_WIDTH - 1);
-                    } else if (checkBlockZ >= CHUNK_WIDTH) {
-                        checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z + 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, 0);
-                    } else if (checkBlockY < 0 || checkBlockY >= CHUNK_WIDTH) {
-                        checkBlock = Block(BlockType::None);
-                    }*/ else {
-                        checkBlock = blocks[checkBlockX][checkBlockY][checkBlockZ];
-                    }
-
-                    if (getBlockFlags(checkBlock.ty) & BlockFlags::Transparent && block.ty != checkBlock.ty) {
+                // Cross shape
+                if (getBlockFlags(block.ty) & BlockFlags::ShapeCross) {
+                    for (u8 face = 0; face < 4; face++) {
                         for (u8 v = 0; v < 4; v++) {
-                            Vertex vertex = cubeVertices[face][v];
+                            Vertex vertex = crossVertices[face][v];
                             vertex.position[0] += blockX;
                             vertex.position[1] += blockY;
                             vertex.position[2] += blockZ;
-                            vertex.texCoord.u = texCoordOffset * textureSizeWithBorderNorm + vertex.texCoord.u * textureSizeNorm;
+                            applyOffsetToTexCoord(vertex.texCoord, block.ty, face);
                             vertices.push_back(vertex);
                         }
                         for (u8 i = 0; i < 6; i++) {
@@ -162,6 +142,60 @@ void Chunk::allocate() {
                             indices.push_back(facesPushed * 4 + index);
                         }
                         facesPushed++;
+                    }
+                }
+
+                // Cube shape
+                else {
+                    for (u8 face = 0; face < 6; face++) {
+                        s32 checkBlockX = blockX;
+                        s32 checkBlockY = blockY;
+                        s32 checkBlockZ = blockZ;
+                        switch (face) {
+                        case 0: checkBlockZ++; break;
+                        case 1: checkBlockZ--; break;
+                        case 2: checkBlockX++; break;
+                        case 3: checkBlockX--; break;
+                        case 4: checkBlockY++; break;
+                        case 5: checkBlockY--; break;
+                        }
+
+                        Block checkBlock;
+                        // If the check block is outside of the chunk, check for the block globally
+                        if (checkBlockX < 0 || checkBlockX >= CHUNK_WIDTH ||
+                            checkBlockY < 0 || checkBlockY >= CHUNK_HEIGHT ||
+                            checkBlockZ < 0 || checkBlockZ >= CHUNK_WIDTH) {
+                            checkBlock = world.getBlock(x * CHUNK_WIDTH + checkBlockX, checkBlockY, z * CHUNK_WIDTH + checkBlockZ);
+                        }
+                        /*if (checkBlockX < 0) {
+                            checkBlock = world.getTrackedChunk(x - 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(CHUNK_WIDTH - 1, checkBlockY, checkBlockZ);
+                        } else if (checkBlockX >= CHUNK_WIDTH) {
+                            checkBlock = world.getTrackedChunk(x + 1 - world.cameraChunkX, z - world.cameraChunkZ)->getBlock(0, checkBlockY, checkBlockZ);
+                        } else if (checkBlockZ < 0) {
+                            checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z - 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, CHUNK_WIDTH - 1);
+                        } else if (checkBlockZ >= CHUNK_WIDTH) {
+                            checkBlock = world.getTrackedChunk(x - world.cameraChunkX, z + 1 - world.cameraChunkZ)->getBlock(checkBlockX, checkBlockY, 0);
+                        } else if (checkBlockY < 0 || checkBlockY >= CHUNK_WIDTH) {
+                            checkBlock = Block(BlockType::None);
+                        }*/ else {
+                            checkBlock = blocks[checkBlockX][checkBlockY][checkBlockZ];
+                        }
+
+                        if (getBlockFlags(checkBlock.ty) & BlockFlags::Transparent && block.ty != checkBlock.ty) {
+                            for (u8 v = 0; v < 4; v++) {
+                                Vertex vertex = cubeVertices[face][v];
+                                vertex.position[0] += blockX;
+                                vertex.position[1] += blockY;
+                                vertex.position[2] += blockZ;
+                                applyOffsetToTexCoord(vertex.texCoord, block.ty, face);
+                                vertices.push_back(vertex);
+                            }
+                            for (u8 i = 0; i < 6; i++) {
+                                u16 index = faceIndices[i];
+                                indices.push_back(facesPushed * 4 + index);
+                            }
+                            facesPushed++;
+                        }
                     }
                 }
             }

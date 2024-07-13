@@ -19,15 +19,17 @@ enum class TextureType {
     Sand,
     RedFlower,
     YellowFlower,
-    Cactus,
+    CactusSide,
+    // TODO: add cactus bottom
+    CactusTop,
 };
 
-const u16 textureAtlasWidth = 256;
-const u8 textureSize = 16;
+const u16 TEXTURE_ATLAS_WIDTH = 256;
+const u8 TEXTURE_SIZE = 16;
 // Textures have 1 pixel border on each side to prevent sampling to the other textures
-const u8 textureSizeWithBorder = textureSize + 2;
-const float textureSizeNorm = (float)textureSize / textureAtlasWidth;
-const float textureSizeWithBorderNorm = (float)textureSizeWithBorder / textureAtlasWidth;
+const u8 TEXTURE_SIZE_WITH_BORDER = TEXTURE_SIZE + 2;
+const float TEXTURE_SIZE_NORM = (float)TEXTURE_SIZE / TEXTURE_ATLAS_WIDTH;
+const float TEXTURE_SIZE_WITH_BORDER_NORM = (float)TEXTURE_SIZE_WITH_BORDER / TEXTURE_ATLAS_WIDTH;
 
 enum class BlockType {
     None,
@@ -54,6 +56,7 @@ enum class BlockFlags {
     Solid = 0x1,
     Transparent = 0x2,
     Breakable = 0x4,
+    ShapeCross = 0x8,
 };
 
 inline BlockFlags operator|(BlockFlags a, BlockFlags b) {
@@ -74,6 +77,10 @@ const BlockFlags blockFlags[] = {
     BlockFlags::Solid | BlockFlags::Breakable,
     BlockFlags::Solid | BlockFlags::Breakable,
     BlockFlags::Solid | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
+    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
+    BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeCross,
+    BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeCross,
     BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
 };
 
@@ -98,4 +105,8 @@ constexpr TextureType blockTextures[][6] = {
     BLOCK_TEXTURES_ALL(TextureType::Stone),
     BLOCK_TEXTURES_SIDES_TOP(TextureType::WoodSide, TextureType::WoodTop),
     BLOCK_TEXTURES_ALL(TextureType::Leaves),
+    BLOCK_TEXTURES_ALL(TextureType::Sand),
+    BLOCK_TEXTURES_ALL(TextureType::RedFlower),
+    BLOCK_TEXTURES_ALL(TextureType::YellowFlower),
+    BLOCK_TEXTURES_SIDES_TOP_BOTTOM(TextureType::CactusSide, TextureType::CactusTop, TextureType::CactusTop), // TODO: use cactus bottom
 };
