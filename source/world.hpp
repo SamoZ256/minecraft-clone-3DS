@@ -38,6 +38,8 @@ public:
     World(Camera& camera_, int uPosition_);
     ~World() = default;
 
+    void save(void*& saveData, u32& saveDataSize) const;
+
     void render();
 
     void moveCamera(const C3D_FVec& movement, bool& isOnGround, bool& wallJump);
@@ -107,6 +109,8 @@ public:
 private:
     Camera& camera;
     int uPosition;
+
+    u32 seed;
 
     s32 cameraChunkX = 0;
     s32 cameraChunkZ = 0;

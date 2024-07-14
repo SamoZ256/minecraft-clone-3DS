@@ -42,6 +42,9 @@ C3D_Tex* loadT3XTexture(const char* filename) {
     return texture;
 }
 
+// Filesystem
+const char* SAVE_FILENAME = "/minecraft_clone_save.dat";
+
 // Perspective
 const float NEAR_PLANE = 0.001f;
 const float FAR_PLANE = RENDER_DISTANCE * CHUNK_WIDTH;
@@ -88,11 +91,45 @@ struct Rect {
     float x, y, w, h;
 };
 
+void save(const World& world) {
+    // Mount the SDMC archive
+    FS_Archive sdmcArchive;
+    Result res = FSUSER_OpenArchive(&sdmcArchive, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+    if (R_FAILED(res)) {
+        std::cout << "Failed to open SMDC archive: 0x" << std::hex << res << std::endl;
+        return;
+    }
+
+    // Open or create the file for writing
+    Handle fileHandle;
+    res = FSUSER_OpenFile(&fileHandle, sdmcArchive, fsMakePath(PATH_ASCII, SAVE_FILENAME), FS_OPEN_WRITE | FS_OPEN_CREATE, 0);
+    if (R_FAILED(res)) {
+        std::cout << "Failed to open file: 0x" << std::hex << res << std::endl;
+        return;
+    }
+
+    void* saveData;
+    u32 saveDataSize;
+    world.save(saveData, saveDataSize);
+
+    // Write the save data to the file
+    u32 bytesWritten;
+    res = FSFILE_Write(fileHandle, &bytesWritten, 0, saveData, saveDataSize, FS_WRITE_FLUSH);
+    if (R_FAILED(res) || bytesWritten != saveDataSize) {
+        std::cout << "Failed to write file: 0x" << std::hex << res << std::endl;
+        return;
+    }
+
+    // Close the file
+    FSFILE_Close(fileHandle);
+}
+
 int main(int argc, char **argv) {
     // Initialization
     srvInit();
     aptInit();
     hidInit();
+    fsInit();
     gfxInitDefault();
     gfxSet3D(true);
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
@@ -100,14 +137,17 @@ int main(int argc, char **argv) {
     // Init console for debugging
     //consoleInit(GFX_BOTTOM, NULL);
 
-    Result res = romfsInit();
-    if (res != 0) {
-        std::cout << "Failed to initialize RomFS (code: 0x" << std::hex << res << ")" << std::endl;
+    Result res = fsInit();
+    if (R_FAILED(res)) {
+        std::cout << "Failed to initialize FS (code: 0x" << std::hex << res << ")" << std::endl;
         return 1;
     }
 
-    // Random seed
-    srand(time(NULL));
+    res = romfsInit();
+    if (R_FAILED(res)) {
+        std::cout << "Failed to initialize RomFS (code: 0x" << std::hex << res << ")" << std::endl;
+        return 1;
+    }
 
 	// -------- Graphics initialization --------
 
@@ -337,6 +377,11 @@ int main(int argc, char **argv) {
             }
         }
 
+        // Save
+        if (hidKeysDown() & KEY_START) {
+            save(world);
+        }
+
         float slider = osGet3DSliderState();
     	float interOcularDistance = slider / 3.0f;
 
@@ -381,7 +426,6 @@ int main(int argc, char **argv) {
             world.render();
 
             // -------- Bottom screen --------
-            /*
             C3D_RenderTargetClear(bottomRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(bottomRenderTarget);
 
@@ -431,7 +475,6 @@ int main(int argc, char **argv) {
                     selectedBlock = i;
                 }
             }
-            */
         }
         C3D_FrameEnd(0);
 

@@ -12,6 +12,10 @@ void generateChunk(void* chunk) {
 }
 
 World::World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {
+    // Random seed
+    seed = (unsigned)time(NULL);
+    srand(seed);
+
     temperatureNoiseSeed = (rand() % 1000000) / 10000.0f;
     humidityNoiseSeed = (rand() % 1000000) / 10000.0f;
     noiseSeed = (rand() % 1000000) / 10000.0f;
@@ -22,6 +26,38 @@ World::World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosi
             Chunk* chunk = new Chunk(*this, uPosition, x, z);
             chunks.push_back(chunk);
             chunk->generate();
+        }
+    }
+}
+
+void World::save(void*& saveData, u32& saveDataSize) const {
+    // Find the size
+    saveDataSize = sizeof(u32); // Seed
+    saveDataSize += sizeof(u32); // Number of modified chunks
+    for (auto [key, data] : modifiedBlocks) {
+        if (data.size() != 0) {
+            saveDataSize += sizeof(s32); // Chunk hash
+            saveDataSize += sizeof(u32); // Number of modified blocks in the chunk
+            saveDataSize += data.size() * sizeof(ModifiedBlock); // Modified blocks
+        }
+    }
+    saveData = malloc(saveDataSize);
+
+    // Copy the data
+    u32* ptr = (u32*)saveData;
+    *ptr = seed; // Seed
+    ptr++;
+    u32* numModifiedChunks = ptr;
+    ptr++;
+    for (auto [key, data] : modifiedBlocks) {
+        if (data.size() != 0) {
+            *numModifiedChunks += 1; // Number of modified chunks
+            *ptr = key; // Chunk hash
+            ptr++;
+            *ptr = data.size(); // Number of modified blocks in the chunk
+            ptr++;
+            memcpy(ptr, data.data(), data.size() * sizeof(ModifiedBlock)); // Modified blocks
+            ptr = (u32*)((u8*)ptr + data.size() * sizeof(ModifiedBlock));
         }
     }
 }
