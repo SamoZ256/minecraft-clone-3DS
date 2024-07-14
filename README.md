@@ -18,6 +18,8 @@ The game can be saved by pressing the start button. The save file is stored on t
 | R                         | Break block
 | Start                     | Save the game
 
+You can choose which block to place by touching one of the blocks on the bottom screen.
+
 ## Usage
 
 A .3dsx build is available in [releases](https://github.com/SamoZ256/minecraft-clone-3DS/releases/tag/v0.0.1). I haven't been able to build for a real 3DS, since that requires [bannertool](https://github.com/Steveice10/bannertool/), but the repository doesn't seem to exist anymore. To build the project yourself, follow the instructions below.
