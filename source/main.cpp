@@ -405,9 +405,9 @@ int main(int argc, char **argv) {
         }
 
         // Block breaking and placing
-        if ((hidKeysDown() & KEY_ZL) || (hidKeysDown() & KEY_ZR)) {
+        if ((hidKeysDown() & KEY_L) || (hidKeysDown() & KEY_R)) {
             Intersection intersection = world.getIntersection();
-            if (hidKeysDown() & KEY_ZR) {
+            if (hidKeysDown() & KEY_R) {
                 world.breakBlock(intersection);
             } else {
                 world.placeBlock(intersection, blocksInInventory[selectedBlock]);

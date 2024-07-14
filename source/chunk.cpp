@@ -94,10 +94,10 @@ void Chunk::generate() {
                     }
 
                     // HACK: for debugging
-                    if (relX == 0 || relX == CHUNK_WIDTH - 1 ||
-                        relZ == 0 || relZ == CHUNK_WIDTH - 1) {
-                        blockTy = BlockType::Stone;
-                    }
+                    //if (relX == 0 || relX == CHUNK_WIDTH - 1 ||
+                    //    relZ == 0 || relZ == CHUNK_WIDTH - 1) {
+                    //    blockTy = BlockType::Stone;
+                    //}
                 } else {
                     groundBlockCount = 0;
                 }
