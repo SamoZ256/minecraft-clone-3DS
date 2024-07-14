@@ -8,8 +8,8 @@
 
 // Noise properties
 const double NOISE_FREQUENCY = 0.04;
-const double TEMPERATURE_FREQUENCY = 0.05;
-const double HUMIDITY_FREQUENCY = 0.05;
+const double TEMPERATURE_FREQUENCY = 0.005;
+const double HUMIDITY_FREQUENCY = 0.005;
 
 void Chunk::generate() {
     //if (generated) {
@@ -24,8 +24,8 @@ void Chunk::generate() {
             s32 blockZ = z * CHUNK_WIDTH + relZ;
 
             // TODO: check if this is correct
-            double temperature = db::perlin(blockX * TEMPERATURE_FREQUENCY, blockZ * TEMPERATURE_FREQUENCY, world.temperatureNoiseSeed);
-            double humidity = db::perlin(blockX * HUMIDITY_FREQUENCY, blockZ * HUMIDITY_FREQUENCY + 0.5, world.humidityNoiseSeed);
+            double temperature = db::perlin(blockX * TEMPERATURE_FREQUENCY, blockZ * TEMPERATURE_FREQUENCY, world.temperatureNoiseSeed) * 0.5 + 0.5;
+            double humidity = db::perlin(blockX * HUMIDITY_FREQUENCY, blockZ * HUMIDITY_FREQUENCY + 0.5, world.humidityNoiseSeed) * 0.5 + 0.5;
             const Biome& biome = getBiome(temperature, humidity);
 
             // Getting biome properties
@@ -77,7 +77,16 @@ void Chunk::generate() {
                         else if (biome.decorations & DecorationFlags::RedFlower && rand() % biome.redFlowerChance == 0) {
                             setBlockTypeChecked(relX, blockY + 1, relZ, BlockType::RedFlower);
                         }
-                        // TODO: other decorations
+                        // Cactus
+                        else if (biome.decorations & DecorationFlags::Cactus && rand() % biome.cactusChance == 0) {
+                            for (s32 i = 0; i < 2 + rand() % 2; i++) {
+                                setBlockTypeChecked(relX, blockY + 1 + i, relZ, BlockType::Cactus);
+                            }
+                        }
+                        // Dead bush
+                        else if (biome.decorations & DecorationFlags::DeadBush && rand() % biome.deadBushChance == 0) {
+                            setBlockTypeChecked(relX, blockY + 1, relZ, BlockType::DeadBush);
+                        }
                     } else if (groundBlockCount <= 2 + rand() % 3) {
                         blockTy = biome.closeToSurfaceBlocksTy;
                     } else {
@@ -204,6 +213,15 @@ void Chunk::allocate() {
                                 vertex.position[0] += blockX;
                                 vertex.position[1] += blockY;
                                 vertex.position[2] += blockZ;
+                                if (getBlockFlags(block.ty) & BlockFlags::ShapeNarrowCube) {
+                                    switch (face) {
+                                    case 0: vertex.position[2] -= 1.0f / TEXTURE_SIZE; break;
+                                    case 1: vertex.position[2] += 1.0f / TEXTURE_SIZE; break;
+                                    case 2: vertex.position[0] -= 1.0f / TEXTURE_SIZE; break;
+                                    case 3: vertex.position[0] += 1.0f / TEXTURE_SIZE; break;
+                                    default: break;
+                                    }
+                                }
                                 applyOffsetToTexCoord(vertex.texCoord.u, block.ty, face);
                                 vertices.push_back(vertex);
                             }

@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
     // Init console for debugging
-    consoleInit(GFX_BOTTOM, NULL);
+    //consoleInit(GFX_BOTTOM, NULL);
 
     Result res = romfsInit();
     if (res != 0) {
@@ -262,7 +262,6 @@ int main(int argc, char **argv) {
 
         float rotX = -circlePos.dy / 128.0f;
         float rotY =  circlePos.dx / 128.0f;
-        std::cout << rotX << " " << rotY << std::endl;
 
         // If held, but not pressed just this frame
         if (hidKeysHeld() & KEY_TOUCH && !(hidKeysDown() & KEY_TOUCH)) {

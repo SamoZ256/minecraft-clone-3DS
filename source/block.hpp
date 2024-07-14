@@ -22,6 +22,7 @@ enum class TextureType {
     CactusSide,
     // TODO: add cactus bottom
     CactusTop,
+    DeadBush,
 };
 
 const u16 TEXTURE_ATLAS_WIDTH = 256;
@@ -42,6 +43,7 @@ enum class BlockType {
     RedFlower,
     YellowFlower,
     Cactus,
+    DeadBush,
 };
 
 struct Block {
@@ -57,6 +59,7 @@ enum class BlockFlags {
     Transparent = 0x2,
     Breakable = 0x4,
     ShapeCross = 0x8,
+    ShapeNarrowCube = 0x10,
 };
 
 inline BlockFlags operator|(BlockFlags a, BlockFlags b) {
@@ -72,16 +75,28 @@ inline BlockFlags operator~(BlockFlags a) {
 }
 
 const BlockFlags blockFlags[] = {
+    // None
     BlockFlags::Transparent,
+    // Dirt
     BlockFlags::Solid | BlockFlags::Breakable,
+    // Grass
     BlockFlags::Solid | BlockFlags::Breakable,
+    // Stone
     BlockFlags::Solid | BlockFlags::Breakable,
+    // Wood
     BlockFlags::Solid | BlockFlags::Breakable,
+    // Leaves
     BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
-    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
+    // Sand
+    BlockFlags::Solid | BlockFlags::Breakable,
+    // Red flower
     BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeCross,
+    // Yellow flower
     BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeCross,
-    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable,
+    // Cactus
+    BlockFlags::Solid | BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeNarrowCube,
+    // Dead bush
+    BlockFlags::Transparent | BlockFlags::Breakable | BlockFlags::ShapeCross,
 };
 
 inline BlockFlags getBlockFlags(BlockType ty) {
@@ -109,4 +124,5 @@ constexpr TextureType blockTextures[][6] = {
     BLOCK_TEXTURES_ALL(TextureType::RedFlower),
     BLOCK_TEXTURES_ALL(TextureType::YellowFlower),
     BLOCK_TEXTURES_SIDES_TOP_BOTTOM(TextureType::CactusSide, TextureType::CactusTop, TextureType::CactusTop), // TODO: use cactus bottom
+    BLOCK_TEXTURES_ALL(TextureType::DeadBush),
 };

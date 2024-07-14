@@ -69,7 +69,7 @@ const Biome biomes[4] = {
         .closeToSurfaceBlocksTy = BlockType::Sand,
         .decorations = DecorationFlags::Cactus | DecorationFlags::DeadBush,
         .cactusChance = 256,
-        .deadBushChance = 512,
+        .deadBushChance = 128,
     },
     Biome{
         .terrainBias = 1.0,
