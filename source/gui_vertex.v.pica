@@ -22,7 +22,6 @@
 
 .proc main
 	mov r0.xy, inpos
-	; HACK: for some reason, this needs to be -half instead of half
 	mov r0.z,  zeros
 	mov r0.w,  ones
 
@@ -30,13 +29,16 @@
 	mov outview, -r0
 
 	mov r1, r0
-	mul r1.xy, scale.xx, r0.xy
+	mul r1.xy, scale.xy, r0.xy
 	add r1.xy, position.xy, r1.xy
 	mov outpos, r1
 
 	; outtex = inpos.yx * 0.5 + 0.5
 	mul r0.xy, half, inpos.xy
 	add r0.xy, half, r0.xy
+
+	add r0.xy, ones.xx, -r0.xy
+
 	mul r0.y, textureSizeNorm.x, r0.y
 	add r0.y, texOffset.x, r0.y
 	mov outtc0, r0

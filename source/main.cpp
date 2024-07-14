@@ -52,7 +52,7 @@ const u32 BG_COLOR_REVERSED = 0xE08000;
 
 // GUI
 const u8 GUI_TEXTURE_COUNT = 5;
-const float GUI_TEXTURE_SCALE = 0.8f;
+const float GUI_TEXTURE_SCALE = 0.6f;
 const float GUI_TEXTURE_SCALE_NORM = GUI_TEXTURE_SCALE / GUI_TEXTURE_COUNT;
 
 // Player
@@ -368,11 +368,12 @@ int main(int argc, char **argv) {
             C3D_SetBufInfo(&guiVbo);
 
             // Set scale
-            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, GUI_TEXTURE_SCALE_NORM, 1.0f, 1.0f, 1.0f);
+            float aspectRatio = 240.0f / 320.0f;
+            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, GUI_TEXTURE_SCALE_NORM / aspectRatio, GUI_TEXTURE_SCALE_NORM, 1.0f, 1.0f);
 
             for (u8 i = 0; i < GUI_TEXTURE_COUNT; i++) {
                 // Set position
-                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, GUI_TEXTURE_SCALE_NORM * i + (1.0f - GUI_TEXTURE_SCALE) * 0.5f / GUI_TEXTURE_COUNT, 0.0f, 0.0f, 0.0f);
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, 0.0f, -(((float)i + 0.5f) / GUI_TEXTURE_COUNT * 2.0f - 1.0f), 0.0f, 0.0f);
 
                 // Set texture offset
                 C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiTexOffset, (float)i * TEXTURE_SIZE_WITH_BORDER_NORM, 0.0f, 0.0f, 0.0f);
