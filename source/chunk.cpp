@@ -11,11 +11,6 @@ const double NOISE_FREQUENCY = 0.04;
 const double TEMPERATURE_FREQUENCY = 0.05;
 const double HUMIDITY_FREQUENCY = 0.05;
 
-void applyOffsetToTexCoord(TexCoord<float>& texCoord, BlockType ty, u8 face) {
-    float offset = enumToInt(blockTextures[enumToInt(ty)][face]);
-    texCoord.u = offset * TEXTURE_SIZE_WITH_BORDER_NORM + texCoord.u * TEXTURE_SIZE_NORM;
-}
-
 void Chunk::generate() {
     //if (generated) {
     //    return;
@@ -156,7 +151,7 @@ void Chunk::allocate() {
                             vertex.position[0] += blockX;
                             vertex.position[1] += blockY;
                             vertex.position[2] += blockZ;
-                            applyOffsetToTexCoord(vertex.texCoord, block.ty, face);
+                            applyOffsetToTexCoord(vertex.texCoord.u, block.ty, face);
                             vertices.push_back(vertex);
                         }
                         for (u8 i = 0; i < 6; i++) {
@@ -209,7 +204,7 @@ void Chunk::allocate() {
                                 vertex.position[0] += blockX;
                                 vertex.position[1] += blockY;
                                 vertex.position[2] += blockZ;
-                                applyOffsetToTexCoord(vertex.texCoord, block.ty, face);
+                                applyOffsetToTexCoord(vertex.texCoord.u, block.ty, face);
                                 vertices.push_back(vertex);
                             }
                             for (u8 i = 0; i < 6; i++) {

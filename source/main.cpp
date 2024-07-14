@@ -63,7 +63,7 @@ const float SPEED = 5.0f;
 const u8 MAX_JUMPS = 3;
 
 // Timers
-const float CLICK_TIME = 0.1f;
+const float CLICK_TIME = 0.2f;
 
 struct GuiVertex {
     float position[2];
@@ -74,6 +74,18 @@ const GuiVertex guiVertices[] = {
     { {  1.0f, -1.0f } },
     { { -1.0f,  1.0f } },
     { {  1.0f,  1.0f } },
+};
+
+const BlockType blocksInInventory[] = {
+    BlockType::Dirt,
+    BlockType::Grass,
+    BlockType::Stone,
+    BlockType::Wood,
+    BlockType::YellowFlower,
+};
+
+struct Rect {
+    float x, y, w, h;
 };
 
 int main(int argc, char **argv) {
@@ -207,6 +219,9 @@ int main(int argc, char **argv) {
 	float yMomentum = 0.0f;
 	u8 jumpCount = MAX_JUMPS;
 
+	// Inventory
+	u8 selectedBlock = 0;
+
 	// World
 	World world(camera, uMainPosition);
 
@@ -239,14 +254,13 @@ int main(int argc, char **argv) {
         touchPosition touch;
         hidTouchRead(&touch);
         // If held, but not pressed just this frame
-        if (hidKeysHeld() & KEY_TOUCH && clickTimer == 0.0f) {
+        if (hidKeysHeld() & KEY_TOUCH && !(hidKeysDown() & KEY_TOUCH)) {
             float rotX = (touch.py - lastTouch.py) * 0.008f;
             float rotY = (touch.px - lastTouch.px) * 0.008f;
 
             camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
             camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
         }
-        lastTouch = touch;
 
         // D-Pad
         C3D_FVec dpad = float3(0.0f);
@@ -265,6 +279,9 @@ int main(int argc, char **argv) {
 
         // Move
         float speed = flyMode ? SPEED_IN_FLIGHT_MODE : SPEED;
+        if (hidKeysHeld() & KEY_X || hidKeysHeld() & KEY_Y) {
+            speed *= 1.6f;
+        }
         C3D_FVec movement = FVec3_Cross(camera.direction, camera.up) * dpad.x * dt * speed;
                  movement =  movement + camera.direction             * dpad.y * dt * speed;
         if (flyMode) {
@@ -282,7 +299,7 @@ int main(int argc, char **argv) {
             if (wallJump || isOnGround) {
                 jumpCount = MAX_JUMPS;
             }
-            bool jump = (((hidKeysDown() & KEY_A) || (hidKeysDown() & KEY_B)) && jumpCount > 0);
+            bool jump = ((hidKeysDown() & KEY_A || hidKeysDown() & KEY_B) && jumpCount > 0);
             if (jump || wallJump) {
                 yMomentum = JUMP_SPEED;
                 if (jump) {
@@ -292,12 +309,12 @@ int main(int argc, char **argv) {
         }
 
         // Block breaking and placing
-        if ((hidKeysDown() & KEY_X) || (hidKeysDown() & KEY_Y)) {
+        if ((hidKeysDown() & KEY_ZL) || (hidKeysDown() & KEY_ZR)) {
             Intersection intersection = world.getIntersection();
-            if (hidKeysDown() & KEY_X) {
+            if (hidKeysDown() & KEY_ZR) {
                 world.breakBlock(intersection);
             } else {
-                world.placeBlock(intersection, BlockType::Dirt);
+                world.placeBlock(intersection, blocksInInventory[selectedBlock]);
             }
         }
 
@@ -368,21 +385,36 @@ int main(int argc, char **argv) {
             C3D_SetBufInfo(&guiVbo);
 
             // Set scale
-            float aspectRatio = 240.0f / 320.0f;
-            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, GUI_TEXTURE_SCALE_NORM / aspectRatio, GUI_TEXTURE_SCALE_NORM, 1.0f, 1.0f);
+            float aspectRatio = 320.0f / 240.0f;
+            Rect rect{0.0f, 0.0f, GUI_TEXTURE_SCALE_NORM, GUI_TEXTURE_SCALE_NORM * aspectRatio};
+            C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiScale, rect.h, rect.w, 1.0f, 1.0f);
+
+            float touchNormX = -(lastTouch.px / 320.0f * 2.0f - 1.0f);
+            float touchNormY = -(lastTouch.py / 240.0f * 2.0f - 1.0f);
 
             for (u8 i = 0; i < GUI_TEXTURE_COUNT; i++) {
                 // Set position
-                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, 0.0f, -(((float)i + 0.5f) / GUI_TEXTURE_COUNT * 2.0f - 1.0f), 0.0f, 0.0f);
+                rect.x = -(((float)i + 0.5f) / GUI_TEXTURE_COUNT * 2.0f - 1.0f);
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiPosition, rect.y, rect.x, 0.0f, 0.0f);
 
                 // Set texture offset
-                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiTexOffset, (float)i * TEXTURE_SIZE_WITH_BORDER_NORM, 0.0f, 0.0f, 0.0f);
+                float offset;
+                applyOffsetToTexCoord(offset, blocksInInventory[i], 0);
+                C3D_FVUnifSet(GPU_VERTEX_SHADER, uGuiTexOffset, offset, 0.0f, 0.0f, 0.0f);
 
                 // Draw
                 C3D_DrawArrays(GPU_TRIANGLE_STRIP, 0, 4);
+
+                if (hidKeysUp() & KEY_TOUCH && clickTimer != 0.0f &&
+                    touchNormX > rect.x - rect.w && touchNormX < rect.x + rect.w &&
+                    touchNormY > rect.y - rect.h && touchNormY < rect.y + rect.h) {
+                    selectedBlock = i;
+                }
             }
         }
         C3D_FrameEnd(0);
+
+        lastTouch = touch;
 
         // Present
         //gfxFlushBuffers();

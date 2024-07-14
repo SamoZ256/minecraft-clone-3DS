@@ -6,6 +6,11 @@
 const u8 CHUNK_WIDTH = 16;
 const u8 CHUNK_HEIGHT = 64;
 
+inline void applyOffsetToTexCoord(float& texCoordU, BlockType ty, u8 face) {
+    float offset = enumToInt(blockTextures[enumToInt(ty)][face]);
+    texCoordU = offset * TEXTURE_SIZE_WITH_BORDER_NORM + texCoordU * TEXTURE_SIZE_NORM;
+}
+
 struct VboData {
     void* vertexData;
     void* indexData;
