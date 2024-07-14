@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
     // Init console for debugging
-    //consoleInit(GFX_BOTTOM, NULL);
+    consoleInit(GFX_BOTTOM, NULL);
 
     Result res = romfsInit();
     if (res != 0) {
@@ -251,27 +251,43 @@ int main(int argc, char **argv) {
         }
 
         // Rotate
+
+        // Touch
         touchPosition touch;
         hidTouchRead(&touch);
+
+        // Circle pad
+        circlePosition circlePos;
+        hidCircleRead(&circlePos);
+
+        float rotX = -circlePos.dy / 128.0f;
+        float rotY =  circlePos.dx / 128.0f;
+        std::cout << rotX << " " << rotY << std::endl;
+
         // If held, but not pressed just this frame
         if (hidKeysHeld() & KEY_TOUCH && !(hidKeysDown() & KEY_TOUCH)) {
-            float rotX = (touch.py - lastTouch.py) * 0.008f;
-            float rotY = (touch.px - lastTouch.px) * 0.008f;
-
-            camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY, false);
-            camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX, false);
+            rotX = (touch.py - lastTouch.py) * 0.24f;
+            rotY = (touch.px - lastTouch.px) * 0.24f;
         }
+
+        C3D_Mtx mtx;
+        Mtx_Identity(&mtx);
+        Mtx_Rotate(&mtx,                                               camera.up,   rotY * dt, false);
+        Mtx_Rotate(&mtx, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)),-rotX * dt, false);
+        camera.direction = Mtx_MultiplyFVec3(&mtx, camera.direction);
+        //camera.direction = Quat_Rotate(camera.direction, FVec3_Normalize(FVec3_Cross(camera.direction, camera.up)), rotX * dt, false);
+        //camera.direction = Quat_Rotate(camera.direction, camera.up,                                                -rotY * dt, false);
 
         // D-Pad
         C3D_FVec dpad = float3(0.0f);
-        if (hidKeysHeld() & KEY_UP)
+        if (hidKeysHeld() & KEY_DUP)
             dpad.y += 1.0f;
-        if (hidKeysHeld() & KEY_DOWN)
+        if (hidKeysHeld() & KEY_DDOWN)
             dpad.y -= 1.0f;
         // TODO: find out why left and right is swapped
-        if (hidKeysHeld() & KEY_LEFT)
+        if (hidKeysHeld() & KEY_DLEFT)
             dpad.x += 1.0f;
-        if (hidKeysHeld() & KEY_RIGHT)
+        if (hidKeysHeld() & KEY_DRIGHT)
             dpad.x -= 1.0f;
 
         if (dpad.x != 0.0f || dpad.y != 0.0f)
@@ -282,10 +298,14 @@ int main(int argc, char **argv) {
         if (hidKeysHeld() & KEY_X || hidKeysHeld() & KEY_Y) {
             speed *= 1.6f;
         }
-        C3D_FVec movement = FVec3_Cross(camera.direction, camera.up) * dpad.x * dt * speed;
-                 movement =  movement + camera.direction             * dpad.y * dt * speed;
+        C3D_FVec dirXZ = float3(camera.direction.x, 0.0f, camera.direction.z);
+        dirXZ = FVec3_Normalize(dirXZ);
+        C3D_FVec movement = FVec3_Cross(dirXZ, camera.up) * dpad.x * dt * speed;
+                 movement =  movement + dirXZ             * dpad.y * dt * speed;
         if (flyMode) {
-            camera.aabb.position = camera.aabb.position + movement;
+            bool isOnGround = false;
+            bool wallJump = false;
+            world.moveCamera(movement, isOnGround, wallJump);
         } else {
             movement.y = yMomentum * dt;
             yMomentum += GRAVITY * dt;
@@ -328,7 +348,7 @@ int main(int argc, char **argv) {
             C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, BG_COLOR_WITH_ALPHA, 0);
            	C3D_FrameDrawOn(topRenderTarget);
 
-            // Projection matrx
+            // Projection matrix
             C3D_Mtx projection;
     		Mtx_PerspStereoTilt(&projection, C3D_AngleFromDegrees(40.0f), C3D_AspectRatioTop, NEAR_PLANE, FAR_PLANE, interOcularDistance, 2.0f, true);
 
@@ -362,6 +382,7 @@ int main(int argc, char **argv) {
             world.render();
 
             // -------- Bottom screen --------
+            /*
             C3D_RenderTargetClear(bottomRenderTarget, C3D_CLEAR_ALL, 0xFFFFFFFF, 0);
            	C3D_FrameDrawOn(bottomRenderTarget);
 
@@ -411,6 +432,7 @@ int main(int argc, char **argv) {
                     selectedBlock = i;
                 }
             }
+            */
         }
         C3D_FrameEnd(0);
 
