@@ -35,8 +35,13 @@ public:
     double humidityNoiseSeed;
     double noiseSeed;
 
-    World(Camera& camera_, int uPosition_);
+    World(Camera& camera_, int uPosition_) : camera{camera_}, uPosition{uPosition_} {}
     ~World() = default;
+
+    // Should be called after @ref load (if there is any)
+    void initialize();
+
+    void load(const void* loadData);
 
     void save(void*& saveData, u32& saveDataSize) const;
 
@@ -110,7 +115,7 @@ private:
     Camera& camera;
     int uPosition;
 
-    u32 seed;
+    u32 seed = 0;
 
     s32 cameraChunkX = 0;
     s32 cameraChunkZ = 0;

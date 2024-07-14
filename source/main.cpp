@@ -91,20 +91,47 @@ struct Rect {
     float x, y, w, h;
 };
 
-void save(const World& world) {
-    // Mount the SDMC archive
-    FS_Archive sdmcArchive;
-    Result res = FSUSER_OpenArchive(&sdmcArchive, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+void tryLoad(World& world, FS_Archive sdmcArchive) {
+    // Open or create the file for writing
+    Handle fileHandle;
+    Result res = FSUSER_OpenFile(&fileHandle, sdmcArchive, fsMakePath(PATH_ASCII, SAVE_FILENAME), FS_OPEN_READ, 0);
     if (R_FAILED(res)) {
-        std::cout << "Failed to open SMDC archive: 0x" << std::hex << res << std::endl;
+        std::cout << "Failed to open file: 0x" << std::hex << res << std::dec << std::endl;
         return;
     }
 
+    // Get the file size
+    u64 fileSize;
+    res = FSFILE_GetSize(fileHandle, &fileSize);
+    if (R_FAILED(res)) {
+        std::cout << "Failed to get file size: 0x" << std::hex << res << std::dec << std::endl;
+        return;
+    }
+
+    // Allocate memory for the buffer
+    void* loadData = malloc(fileSize);
+
+    // Read the data from the file
+    u32 bytesRead;
+    res = FSFILE_Read(fileHandle, &bytesRead, 0, loadData, fileSize);
+    if (R_FAILED(res)) {
+        std::cout << "Failed to read file: 0x" << std::hex << res << std::dec << std::endl;
+        return;
+    }
+
+    world.load(loadData);
+    free(loadData);
+
+    // Close the file
+    FSFILE_Close(fileHandle);
+}
+
+void save(const World& world, FS_Archive sdmcArchive) {
     // Open or create the file for writing
     Handle fileHandle;
-    res = FSUSER_OpenFile(&fileHandle, sdmcArchive, fsMakePath(PATH_ASCII, SAVE_FILENAME), FS_OPEN_WRITE | FS_OPEN_CREATE, 0);
+    Result res = FSUSER_OpenFile(&fileHandle, sdmcArchive, fsMakePath(PATH_ASCII, SAVE_FILENAME), FS_OPEN_WRITE | FS_OPEN_CREATE, 0);
     if (R_FAILED(res)) {
-        std::cout << "Failed to open file: 0x" << std::hex << res << std::endl;
+        std::cout << "Failed to open file: 0x" << std::hex << res << std::dec << std::endl;
         return;
     }
 
@@ -116,7 +143,7 @@ void save(const World& world) {
     u32 bytesWritten;
     res = FSFILE_Write(fileHandle, &bytesWritten, 0, saveData, saveDataSize, FS_WRITE_FLUSH);
     if (R_FAILED(res) || bytesWritten != saveDataSize) {
-        std::cout << "Failed to write file: 0x" << std::hex << res << std::endl;
+        std::cout << "Failed to write file: 0x" << std::hex << res << std::dec << std::endl;
         return;
     }
 
@@ -139,13 +166,21 @@ int main(int argc, char **argv) {
 
     Result res = fsInit();
     if (R_FAILED(res)) {
-        std::cout << "Failed to initialize FS (code: 0x" << std::hex << res << ")" << std::endl;
+        std::cout << "Failed to initialize FS: 0x" << std::hex << res << std::dec << std::endl;
         return 1;
     }
 
     res = romfsInit();
     if (R_FAILED(res)) {
-        std::cout << "Failed to initialize RomFS (code: 0x" << std::hex << res << ")" << std::endl;
+        std::cout << "Failed to initialize RomFS: 0x" << std::hex << res << std::dec << std::endl;
+        return 1;
+    }
+
+    // Mount the SDMC archive
+    FS_Archive sdmcArchive;
+    res = FSUSER_OpenArchive(&sdmcArchive, ARCHIVE_SDMC, fsMakePath(PATH_EMPTY, ""));
+    if (R_FAILED(res)) {
+        std::cout << "Failed to open SMDC archive: 0x" << std::hex << res << std::dec << std::endl;
         return 1;
     }
 
@@ -264,6 +299,8 @@ int main(int argc, char **argv) {
 
 	// World
 	World world(camera, uMainPosition);
+	tryLoad(world, sdmcArchive);
+	world.initialize();
 
 	touchPosition lastTouch{0, 0};
 
@@ -379,7 +416,7 @@ int main(int argc, char **argv) {
 
         // Save
         if (hidKeysDown() & KEY_START) {
-            save(world);
+            save(world, sdmcArchive);
         }
 
         float slider = osGet3DSliderState();
@@ -484,6 +521,9 @@ int main(int argc, char **argv) {
         //gfxFlushBuffers();
         //gfxSwapBuffers();
     }
+
+    // Close the archive
+    FSUSER_CloseArchive(sdmcArchive);
 
     // Graphics deinitialization
     shaderProgramFree(&mainProgram);
