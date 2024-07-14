@@ -22,7 +22,7 @@ You can choose which block to place by touching one of the blocks on the bottom 
 
 ## Usage
 
-A .3dsx build is available in [releases](https://github.com/SamoZ256/minecraft-clone-3DS/releases/tag/v0.0.1), which can be run on a 3DS emulator (like Citra). I haven't been able to build for a real 3DS, since that requires [bannertool](https://github.com/Steveice10/bannertool/), but the repository doesn't seem to exist anymore. To build the project yourself, follow the instructions below.
+A .3dsx build is available in [releases](https://github.com/SamoZ256/minecraft-clone-3DS/releases/tag/v0.0.2), which can be run on a 3DS emulator (like Citra). I haven't been able to build for a real 3DS, since that requires [bannertool](https://github.com/Steveice10/bannertool/), but the repository doesn't seem to exist anymore. To build the project yourself, follow the instructions below.
 
 ### Building
 
